@@ -326,8 +326,6 @@
       cursor: not-allowed;
       transform: none;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-      background: #BDBDBD !important;
-      color: #757575 !important;
     }
 
     .btn.secondary {
@@ -423,6 +421,24 @@
 
     .hidden {
       display: none !important;
+    }
+
+    .location-permission-btn {
+      margin: 16px 0;
+      padding: 20px;
+      background: #FFF8E1;
+      border: 1px solid #ECA02D;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(236, 160, 45, 0.15), 0 1px 2px rgba(236, 160, 45, 0.12);
+    }
+
+    .location-help-text {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #666666;
+      line-height: 1.4;
+      opacity: 0.87;
     }
 
     .fade-in {
@@ -581,31 +597,6 @@
     .branch-dropdown:hover {
       border-color: #ECA02D;
       box-shadow: 0 2px 4px rgba(236, 160, 45, 0.15);
-    }
-
-    /* iOS-specific fixes */
-    @supports (-webkit-touch-callout: none) {
-      .branch-dropdown {
-        -webkit-appearance: none;
-        -webkit-border-radius: 4px;
-        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%204.9A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-        background-repeat: no-repeat;
-        background-position: right 8px center;
-        background-size: 12px auto;
-        padding-right: 32px;
-      }
-      
-      .btn {
-        -webkit-appearance: none;
-        -webkit-tap-highlight-color: rgba(236, 160, 45, 0.2);
-        -webkit-user-select: none;
-        -webkit-touch-callout: none;
-      }
-      
-      .btn:disabled {
-        -webkit-opacity: 0.38;
-        opacity: 0.38;
-      }
     }
 
     @media (max-width: 600px) {
@@ -1137,6 +1128,14 @@
     <div id="message" class="message-info">
       <i class="fas fa-info-circle"></i> Ready to scan QR code...
     </div>
+    
+    <!-- Location Permission Button (iOS) -->
+    <div id="locationPermissionBtn" class="location-permission-btn hidden">
+      <button id="requestLocationBtn" class="btn secondary">
+        <i class="fas fa-map-marker-alt"></i> Enable Location Access
+      </button>
+      <p class="location-help-text">Location helps validate your attendance. Please enable location services.</p>
+    </div>
 
     <!-- Retry Section -->
     <div id="retrySection" class="retry-section hidden">
@@ -1211,22 +1210,39 @@
       locationText: document.getElementById('locationText'),
       branchText: document.getElementById('branchText'),
       branchSelect: document.getElementById('branchSelect'),
-      distanceText: document.getElementById('distanceText')
+      distanceText: document.getElementById('distanceText'),
+      locationPermissionBtn: document.getElementById('locationPermissionBtn'),
+      requestLocationBtn: document.getElementById('requestLocationBtn')
     };
 
     // Initialize the app
     function initApp() {
-      getLocation(); // Get location first
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
+      if (isIOS) {
+        showMessage('iOS detected. Location access will be requested when needed.', 'info');
+        // For iOS, we'll request location when the user reaches the submit step
+      } else {
+        getLocation(); // Get location immediately for non-iOS devices
+      }
+      
       initializeQRScanner();
       setupEventListeners();
       updateStats();
       fetchStaffDatabase(); // Fetch staff database
     }
 
-    // Get user location
+    // Get user location with iOS-specific handling
     function getLocation() {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
       if (navigator.geolocation) {
-        showMessage('Getting your location...', 'info');
+        showMessage('Requesting location permission...', 'info');
+        
+        // iOS-specific: Show more detailed message
+        if (isIOS) {
+          showMessage('Please allow location access when prompted. This helps validate your attendance location.', 'info');
+        }
         
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -1242,6 +1258,25 @@
           },
           (error) => {
             console.error('Location error:', error);
+            let errorMessage = 'Location access denied.';
+            
+            // iOS-specific error handling
+            if (isIOS) {
+              switch(error.code) {
+                case error.PERMISSION_DENIED:
+                  errorMessage = 'Location permission denied. Please enable location access in Settings > Privacy & Security > Location Services > Safari/Chrome.';
+                  break;
+                case error.POSITION_UNAVAILABLE:
+                  errorMessage = 'Location unavailable. Please check your location settings.';
+                  break;
+                case error.TIMEOUT:
+                  errorMessage = 'Location request timed out. Please try again.';
+                  break;
+                default:
+                  errorMessage = 'Location access denied. Please enable location services.';
+              }
+            }
+            
             userLocation = {
               latitude: 0,
               longitude: 0,
@@ -1249,13 +1284,13 @@
               timestamp: new Date().toISOString(),
               error: error.message
             };
-            showMessage('Location access denied. Continuing without location.', 'error');
+            showMessage(errorMessage, 'error');
             displayLocationInfo();
           },
           {
             enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 60000
+            timeout: 15000, // Increased timeout for iOS
+            maximumAge: 30000 // Reduced maximum age for more accurate location
           }
         );
       } else {
@@ -1393,20 +1428,8 @@
       elements.retryQrBtn.addEventListener('click', retryQRScan);
       elements.retrySubmitBtn.addEventListener('click', retrySubmission);
       elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
-      elements.branchSelect.addEventListener('change', function() {
-        validateAndSubmit();
-        
-        // Force enable submit button if branch is selected (for testing)
-        if (this.value) {
-          setTimeout(() => {
-            elements.submitBtn.disabled = false;
-            // Force UI update
-            elements.submitBtn.style.display = 'none';
-            elements.submitBtn.offsetHeight;
-            elements.submitBtn.style.display = '';
-          }, 50);
-        }
-      });
+      elements.branchSelect.addEventListener('change', validateAndSubmit);
+      elements.requestLocationBtn.addEventListener('click', requestLocationPermission);
     }
 
     function captureSelfie() {
@@ -1488,12 +1511,13 @@
       
       showMessage('Selfie captured! Click "Submit Attendance" to continue.', 'success');
       
-      // Force UI update for iOS
-      setTimeout(() => {
-        elements.submitBtn.style.display = 'none';
-        elements.submitBtn.offsetHeight; // Trigger reflow
-        elements.submitBtn.style.display = '';
-      }, 100);
+      // Request location on iOS when user reaches submit step
+      if (isIOS && (!userLocation || userLocation.latitude === 0)) {
+        setTimeout(() => {
+          showMessage('Please allow location access when prompted to validate your attendance.', 'info');
+          getLocation();
+        }, 1000);
+      }
     }
 
     function retakeSelfie() {
@@ -1650,6 +1674,7 @@
       elements.retryQrBtn.classList.add('hidden');
       elements.retrySection.classList.add('hidden');
       elements.locationInfo.classList.add('hidden'); // Hide location info
+      elements.locationPermissionBtn.classList.add('hidden'); // Hide location permission button
       elements.branchSelect.value = ''; // Reset branch dropdown
       elements.distanceText.textContent = 'Distance: Calculating...'; // Reset distance text
       
@@ -1701,17 +1726,24 @@
         }
         
         elements.locationInfo.classList.remove('hidden');
+        elements.locationPermissionBtn.classList.add('hidden'); // Hide permission button when location is available
       } else {
         elements.locationText.textContent = 'Location: Not available';
         elements.branchText.textContent = 'Branch: Unknown';
         elements.distanceText.textContent = 'Distance: Unknown';
         elements.locationInfo.classList.add('hidden');
         
-        // Enable submit button even without location for testing
-        if (elements.branchSelect.value) {
-          elements.submitBtn.disabled = false;
+        // Show location permission button for iOS if location is not available
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS && userLocation && userLocation.error) {
+          elements.locationPermissionBtn.classList.remove('hidden');
         }
       }
+    }
+
+    function requestLocationPermission() {
+      showMessage('Requesting location permission...', 'info');
+      getLocation();
     }
 
     function validateLocation(selectedBranch) {
@@ -1747,13 +1779,6 @@
         elements.distanceText.textContent = 'Distance: Branch location not found';
         elements.submitBtn.disabled = true;
       }
-      
-      // Force UI update for iOS
-      setTimeout(() => {
-        elements.submitBtn.style.display = 'none';
-        elements.submitBtn.offsetHeight; // Trigger reflow
-        elements.submitBtn.style.display = '';
-      }, 10);
     }
 
     function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -1774,18 +1799,6 @@
       const selectedBranch = elements.branchSelect.value;
       if (selectedBranch && userLocation) {
         validateLocation(selectedBranch);
-      } else if (selectedBranch) {
-        // If branch is selected but no location, still enable submit for testing
-        elements.branchText.textContent = `Branch: ${selectedBranch}`;
-        elements.distanceText.textContent = 'Distance: Location not available';
-        elements.submitBtn.disabled = false;
-        
-        // Force UI update for iOS
-        setTimeout(() => {
-          elements.submitBtn.style.display = 'none';
-          elements.submitBtn.offsetHeight; // Trigger reflow
-          elements.submitBtn.style.display = '';
-        }, 10);
       }
     }
 
@@ -1827,32 +1840,10 @@
           branchSelect.appendChild(option);
         });
         
-        // Add fallback options if no branches found
-        if (uniqueBranches.length === 0) {
-          const fallbackBranches = ['Mumbai Central', 'Mumbai West', 'Mumbai North', 'Other Location'];
-          fallbackBranches.forEach(branchName => {
-            const option = document.createElement('option');
-            option.value = branchName;
-            option.textContent = branchName;
-            branchSelect.appendChild(option);
-          });
-        }
-        
         showMessage('Staff database loaded successfully!', 'success');
       } catch (error) {
         console.error('Error fetching staff database:', error);
-        showMessage('Failed to load staff database. Using fallback options.', 'info');
-        
-        // Add fallback options on error
-        const branchSelect = document.getElementById('branchSelect');
-        branchSelect.innerHTML = '<option value="">Select a branch...</option>';
-        const fallbackBranches = ['Mumbai Central', 'Mumbai West', 'Mumbai North', 'Other Location'];
-        fallbackBranches.forEach(branchName => {
-          const option = document.createElement('option');
-          option.value = branchName;
-          option.textContent = branchName;
-          branchSelect.appendChild(option);
-        });
+        showMessage('Failed to load staff database. Please try again later.', 'error');
       }
     }
 
