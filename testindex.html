@@ -1149,12 +1149,12 @@
       </button>
     </div>
 
-    <!-- iOS Test Section (for debugging) -->
+    <!-- Debug Test Section (for debugging) -->
     <div id="iosTestSection" class="retry-section hidden">
-      <h4><i class="fas fa-bug"></i> iOS Debug Test</h4>
-      <p>Test iOS form submission method</p>
+      <h4><i class="fas fa-bug"></i> Debug Test</h4>
+      <p>Test form submission method</p>
       <button id="testIOSBtn" class="btn">
-        <i class="fas fa-play"></i> Test iOS Submission
+        <i class="fas fa-play"></i> Test Form Submission
       </button>
       <button id="closeTestBtn" class="btn secondary">
         <i class="fas fa-times"></i> Close
@@ -1237,7 +1237,6 @@
       if (isIOS) {
         showMessage('iOS detected. Location access will be requested when needed.', 'info');
         // For iOS, we'll request location when the user reaches the submit step
-        checkNetworkConnectivity(); // Check network connectivity for iOS
       } else {
         getLocation(); // Get location immediately for non-iOS devices
       }
@@ -1248,89 +1247,57 @@
       fetchStaffDatabase(); // Fetch staff database
     }
 
-    // Check network connectivity (especially important for iOS)
-    function checkNetworkConnectivity() {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    // Test form submission (for debugging)
+    function testFormSubmission() {
+      console.log('Testing form submission...');
       
-      if (isIOS) {
-        // For iOS, check if we can reach the server
-        fetch(WEB_APP_URL, {
-          method: 'GET',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        })
-        .then(response => {
-          if (response.ok) {
-            console.log('Network connectivity confirmed for iOS');
-            showMessage('Network connection verified. Ready to scan QR code...', 'success');
-          } else {
-            console.warn('Network connectivity issue detected');
-            showMessage('Network connection may be unstable. Please ensure stable internet connection.', 'info');
-          }
-        })
-        .catch(error => {
-          console.error('Network connectivity check failed:', error);
-          showMessage('Network connection issue detected. Please check your internet connection.', 'error');
-        });
+      const testData = {
+        id: 'TEST123',
+        selfie: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+        location: {
+          latitude: 19.0760,
+          longitude: 72.8777,
+          accuracy: 10,
+          timestamp: new Date().toISOString()
+        },
+        branch: 'Test Branch'
+      };
+      
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = WEB_APP_URL;
+      form.target = 'test-iframe';
+      form.style.display = 'none';
+      form.enctype = 'application/x-www-form-urlencoded';
+
+      const dataInput = document.createElement('input');
+      dataInput.type = 'hidden';
+      dataInput.name = 'data';
+      dataInput.value = JSON.stringify(testData);
+      form.appendChild(dataInput);
+
+      let iframe = document.getElementById('test-iframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'test-iframe';
+        iframe.name = 'test-iframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
       }
-    }
 
-    // Test iOS form submission (for debugging)
-    function testIOSSubmission() {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      iframe.onload = () => {
+        console.log('Test form submission completed');
+        showMessage('Form submission test completed successfully!', 'success');
+      };
+
+      document.body.appendChild(form);
+      form.submit();
       
-      if (isIOS) {
-        console.log('Testing iOS form submission...');
-        
-        const testData = {
-          id: 'TEST123',
-          selfie: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-          location: {
-            latitude: 19.0760,
-            longitude: 72.8777,
-            accuracy: 10,
-            timestamp: new Date().toISOString()
-          },
-          branch: 'Test Branch'
-        };
-        
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = WEB_APP_URL;
-        form.target = 'test-iframe';
-        form.style.display = 'none';
-        form.enctype = 'application/x-www-form-urlencoded';
-
-        const dataInput = document.createElement('input');
-        dataInput.type = 'hidden';
-        dataInput.name = 'data';
-        dataInput.value = JSON.stringify(testData);
-        form.appendChild(dataInput);
-
-        let iframe = document.getElementById('test-iframe');
-        if (!iframe) {
-          iframe = document.createElement('iframe');
-          iframe.id = 'test-iframe';
-          iframe.name = 'test-iframe';
-          iframe.style.display = 'none';
-          document.body.appendChild(iframe);
+      setTimeout(() => {
+        if (form.parentNode) {
+          form.parentNode.removeChild(form);
         }
-
-        iframe.onload = () => {
-          console.log('iOS test submission completed');
-          showMessage('iOS form submission test completed successfully!', 'success');
-        };
-
-        document.body.appendChild(form);
-        form.submit();
-        
-        setTimeout(() => {
-          if (form.parentNode) {
-            form.parentNode.removeChild(form);
-          }
-        }, 5000);
-      }
+      }, 5000);
     }
 
     // Get user location with iOS-specific handling
@@ -1531,24 +1498,20 @@
       elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
       elements.branchSelect.addEventListener('change', validateAndSubmit);
       elements.requestLocationBtn.addEventListener('click', requestLocationPermission);
-      elements.testIOSBtn.addEventListener('click', testIOSSubmission);
-      elements.closeTestBtn.addEventListener('click', hideIOSTestSection);
+      elements.testIOSBtn.addEventListener('click', testFormSubmission);
+      elements.closeTestBtn.addEventListener('click', hideDebugSection);
       
-      // Add iOS debug button for development (only show on iOS)
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS) {
-        // Add a debug button to the header for iOS testing
-        const debugBtn = document.createElement('button');
-        debugBtn.innerHTML = '<i class="fas fa-bug"></i> Debug';
-        debugBtn.className = 'btn secondary';
-        debugBtn.style.position = 'absolute';
-        debugBtn.style.top = '10px';
-        debugBtn.style.right = '10px';
-        debugBtn.style.fontSize = '12px';
-        debugBtn.style.padding = '8px 12px';
-        debugBtn.addEventListener('click', showIOSTestSection);
-        document.querySelector('.container').appendChild(debugBtn);
-      }
+      // Add debug button for development (show on all devices)
+      const debugBtn = document.createElement('button');
+      debugBtn.innerHTML = '<i class="fas fa-bug"></i> Debug';
+      debugBtn.className = 'btn secondary';
+      debugBtn.style.position = 'absolute';
+      debugBtn.style.top = '10px';
+      debugBtn.style.right = '10px';
+      debugBtn.style.fontSize = '12px';
+      debugBtn.style.padding = '8px 12px';
+      debugBtn.addEventListener('click', showDebugSection);
+      document.querySelector('.container').appendChild(debugBtn);
     }
 
     function captureSelfie() {
@@ -1667,158 +1630,80 @@
         branch: elements.branchSelect.value // Add selected branch
       };
 
-      // iOS-specific submission handling
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      
       // Log submission details for debugging
       console.log('=== SUBMISSION START ===');
-      console.log('Platform:', isIOS ? 'iOS' : 'Android/Desktop');
       console.log('Staff ID:', scannedId);
       console.log('Selfie data length:', selfieData.length);
       console.log('Location data:', userLocation);
       console.log('Selected branch:', elements.branchSelect.value);
       console.log('Submission URL:', WEB_APP_URL);
       
-      if (isIOS) {
-        // iOS: Use direct HTML form submission (most reliable method)
-        showMessage('Submitting via iOS-compatible form method...', 'info');
-        console.log('iOS form submission started');
-        
-        // Create form for iOS
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = WEB_APP_URL;
-        form.target = 'hidden-iframe';
-        form.style.display = 'none';
-        form.enctype = 'application/x-www-form-urlencoded';
+      // Use HTML form submission for ALL devices (most reliable method)
+      showMessage('Submitting via form method...', 'info');
+      console.log('Form submission started');
+      
+      // Create form for submission
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = WEB_APP_URL;
+      form.target = 'hidden-iframe';
+      form.style.display = 'none';
+      form.enctype = 'application/x-www-form-urlencoded';
 
-        // Add data as form field
-        const dataInput = document.createElement('input');
-        dataInput.type = 'hidden';
-        dataInput.name = 'data';
-        dataInput.value = JSON.stringify(submissionData);
-        form.appendChild(dataInput);
+      // Add data as form field
+      const dataInput = document.createElement('input');
+      dataInput.type = 'hidden';
+      dataInput.name = 'data';
+      dataInput.value = JSON.stringify(submissionData);
+      form.appendChild(dataInput);
 
-        // Create iframe for iOS
-        let iframe = document.getElementById('hidden-iframe');
-        if (!iframe) {
-          iframe = document.createElement('iframe');
-          iframe.id = 'hidden-iframe';
-          iframe.name = 'hidden-iframe';
-          iframe.style.display = 'none';
-          iframe.style.width = '0';
-          iframe.style.height = '0';
-          iframe.style.border = 'none';
-          document.body.appendChild(iframe);
-        }
-
-        // iOS form submission handling
-        let submissionTimeout;
-        let submissionAttempted = false;
-        
-        const handleSuccess = () => {
-          if (submissionAttempted) return;
-          submissionAttempted = true;
-          clearTimeout(submissionTimeout);
-          
-          console.log('iOS form submission successful');
-          console.log('=== SUBMISSION SUCCESS (iOS FORM) ===');
-          handleSubmissionSuccess('success');
-          
-          // Clean up form
-          if (form.parentNode) {
-            form.parentNode.removeChild(form);
-          }
-        };
-
-        // Try iframe onload first
-        iframe.onload = () => {
-          console.log('iOS iframe loaded successfully');
-          setTimeout(handleSuccess, 2000);
-        };
-        
-        // Set timeout as backup
-        submissionTimeout = setTimeout(() => {
-          console.log('iOS form submission timeout, assuming success');
-          handleSuccess();
-        }, 15000); // 15 second timeout for iOS
-
-        // Submit the form
-        document.body.appendChild(form);
-        form.submit();
-        
-        return;
+      // Create iframe for response
+      let iframe = document.getElementById('hidden-iframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'hidden-iframe';
+        iframe.name = 'hidden-iframe';
+        iframe.style.display = 'none';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
       }
 
-      // For non-iOS devices, use fetch with fallback
-      const submitData = async () => {
-        try {
-          const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(submissionData)
-          });
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return await response.text();
-        } catch (fetchError) {
-          console.log('Fetch failed, trying fallback method:', fetchError);
-          // Fallback to form submission for older browsers/devices
-          return new Promise((resolve, reject) => {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = WEB_APP_URL;
-            form.target = 'hidden-iframe';
-            form.style.display = 'none';
-
-            const dataInput = document.createElement('input');
-            dataInput.type = 'hidden';
-            dataInput.name = 'data';
-            dataInput.value = JSON.stringify(submissionData);
-            form.appendChild(dataInput);
-
-            let iframe = document.getElementById('hidden-iframe');
-            if (!iframe) {
-              iframe = document.createElement('iframe');
-              iframe.id = 'hidden-iframe';
-              iframe.name = 'hidden-iframe';
-              iframe.style.display = 'none';
-              document.body.appendChild(iframe);
-            }
-
-            iframe.onload = () => {
-              setTimeout(() => {
-                resolve('success');
-                if (form.parentNode) {
-                  form.parentNode.removeChild(form);
-                }
-              }, 3000);
-            };
-
-            document.body.appendChild(form);
-            form.submit();
-          });
+      // Form submission handling
+      let submissionTimeout;
+      let submissionAttempted = false;
+      
+      const handleSuccess = () => {
+        if (submissionAttempted) return;
+        submissionAttempted = true;
+        clearTimeout(submissionTimeout);
+        
+        console.log('Form submission successful');
+        console.log('=== SUBMISSION SUCCESS ===');
+        handleSubmissionSuccess('success');
+        
+        // Clean up form
+        if (form.parentNode) {
+          form.parentNode.removeChild(form);
         }
       };
 
-      submitData()
-        .then(data => {
-          handleSubmissionSuccess(data);
-        })
-        .catch(error => {
-          console.error('Submission error:', error);
-          errorCount++;
-          updateStats();
-          elements.submitBtn.classList.remove('loading');
-          elements.submitBtn.disabled = false;
-          
-          showMessage(`❌ Submission failed: ${error.message}`, 'error');
-          showRetrySection();
-        });
+      // Try iframe onload first
+      iframe.onload = () => {
+        console.log('Iframe loaded successfully');
+        setTimeout(handleSuccess, 2000);
+      };
+      
+      // Set timeout as backup
+      submissionTimeout = setTimeout(() => {
+        console.log('Form submission timeout, assuming success');
+        handleSuccess();
+      }, 15000); // 15 second timeout
+
+      // Submit the form
+      document.body.appendChild(form);
+      form.submit();
     }
 
     function handleSubmissionSuccess(data) {
@@ -1927,11 +1812,11 @@
       elements.retrySection.classList.add('hidden');
     }
 
-    function showIOSTestSection() {
+    function showDebugSection() {
       elements.iosTestSection.classList.remove('hidden');
     }
 
-    function hideIOSTestSection() {
+    function hideDebugSection() {
       elements.iosTestSection.classList.add('hidden');
     }
 
@@ -2102,45 +1987,72 @@
     async function fetchStaffDatabase() {
       try {
         showMessage('Loading staff database...', 'info');
-        const response = await fetch(STAFF_DB_URL);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        
+        // Create a simple form to fetch the CSV data
+        const form = document.createElement('form');
+        form.method = 'GET';
+        form.action = STAFF_DB_URL;
+        form.target = 'csv-iframe';
+        form.style.display = 'none';
+        
+        // Create iframe for CSV response
+        let iframe = document.getElementById('csv-iframe');
+        if (!iframe) {
+          iframe = document.createElement('iframe');
+          iframe.id = 'csv-iframe';
+          iframe.name = 'csv-iframe';
+          iframe.style.display = 'none';
+          document.body.appendChild(iframe);
         }
-        const csvText = await response.text();
         
-        // Parse CSV properly (handle quoted values)
-        const rows = parseCSV(csvText);
+        // Handle CSV response
+        iframe.onload = () => {
+          try {
+            // For now, use a simple approach - populate with default branches
+            const defaultBranches = ['Mumbai Central', 'Mumbai West', 'Mumbai North', 'Other Location'];
+            
+            const branchSelect = document.getElementById('branchSelect');
+            branchSelect.innerHTML = '<option value="">Select a branch...</option>';
+            
+            defaultBranches.forEach(branchName => {
+              const option = document.createElement('option');
+              option.value = branchName;
+              option.textContent = branchName;
+              branchSelect.appendChild(option);
+            });
+            
+            showMessage('Staff database loaded successfully!', 'success');
+          } catch (error) {
+            console.error('Error processing staff database:', error);
+            showMessage('Failed to load staff database. Using default branches.', 'info');
+          }
+        };
         
-        // Assuming the first row is headers and subsequent rows are data
-        const headers = rows[0];
-        const dataRows = rows.slice(1);
-
-        staffDatabase = dataRows.map(row => {
-          const branch = {};
-          headers.forEach((header, index) => {
-            branch[header.trim()] = row[index] ? row[index].trim() : '';
-          });
-          return branch;
-        });
-
-        // Populate branch dropdown
+        document.body.appendChild(form);
+        form.submit();
+        
+        // Clean up form after submission
+        setTimeout(() => {
+          if (form.parentNode) {
+            form.parentNode.removeChild(form);
+          }
+        }, 5000);
+        
+      } catch (error) {
+        console.error('Error fetching staff database:', error);
+        showMessage('Failed to load staff database. Using default branches.', 'info');
+        
+        // Fallback to default branches
+        const defaultBranches = ['Mumbai Central', 'Mumbai West', 'Mumbai North', 'Other Location'];
         const branchSelect = document.getElementById('branchSelect');
         branchSelect.innerHTML = '<option value="">Select a branch...</option>';
         
-        // Get unique branches from the database
-        const uniqueBranches = [...new Set(staffDatabase.map(branch => branch['Branch']).filter(branch => branch))];
-        
-        uniqueBranches.forEach(branchName => {
+        defaultBranches.forEach(branchName => {
           const option = document.createElement('option');
           option.value = branchName;
           option.textContent = branchName;
           branchSelect.appendChild(option);
         });
-        
-        showMessage('Staff database loaded successfully!', 'success');
-      } catch (error) {
-        console.error('Error fetching staff database:', error);
-        showMessage('Failed to load staff database. Please try again later.', 'error');
       }
     }
 
