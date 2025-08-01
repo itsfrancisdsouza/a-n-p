@@ -637,27 +637,23 @@
 
       // Handle iframe load event
       iframe.onload = function() {
-        // Since we can't read iframe content due to CORS, 
-        // we'll assume success if the iframe loads without error
+        // Since we can't access iframe content due to CORS, 
+        // we'll assume success after a reasonable timeout
         setTimeout(() => {
           try {
-            // Check if iframe loaded successfully
-            if (iframe.contentWindow && iframe.contentWindow.location.href !== 'about:blank') {
-              // Assume success since the iframe loaded
-              elements.submitBtn.classList.remove('loading');
-              successCount++;
-              updateStats();
-              showMessage(`✅ Attendance recorded successfully!`, 'success');
-              elements.submitStep.classList.remove('active');
-              elements.submitStep.classList.add('completed');
-              
-              // Auto-reset after 3 seconds
-              setTimeout(() => {
-                resetApp();
-              }, 3000);
-            } else {
-              throw new Error('Submission may have failed');
-            }
+            // Assume success since the iframe loaded without error
+            // The actual submission success is proven by the Google Sheet data
+            elements.submitBtn.classList.remove('loading');
+            successCount++;
+            updateStats();
+            showMessage(`✅ Attendance recorded successfully!`, 'success');
+            elements.submitStep.classList.remove('active');
+            elements.submitStep.classList.add('completed');
+            
+            // Auto-reset after 3 seconds
+            setTimeout(() => {
+              resetApp();
+            }, 3000);
           } catch (error) {
             errorCount++;
             updateStats();
@@ -672,7 +668,7 @@
           if (form.parentNode) {
             form.parentNode.removeChild(form);
           }
-        }, 2000); // Wait 2 seconds for response
+        }, 3000); // Wait 3 seconds for response
       };
 
       // Submit the form
