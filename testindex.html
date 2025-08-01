@@ -1552,118 +1552,109 @@
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       
       if (isIOS) {
-        // For iOS, try multiple submission methods
+        // iOS-specific submission using direct form submission (most reliable)
         showMessage('Submitting via iOS-compatible method...', 'info');
         console.log('iOS submission started with data:', submissionData);
         
-        // Method 1: Try fetch first (might work on newer iOS versions)
-        fetch(WEB_APP_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(submissionData)
-        })
-        .then(response => {
-          if (response.ok) {
-            console.log('iOS fetch successful');
-            elements.submitBtn.classList.remove('loading');
-            successCount++;
-            updateStats();
-            showMessage(`✅ Attendance recorded successfully!`, 'success');
-            elements.submitStep.classList.remove('active');
-            elements.submitStep.classList.add('completed');
-            
-            const submitIndicator = elements.submitStep.querySelector('.status-indicator');
-            submitIndicator.classList.remove('active');
-            submitIndicator.classList.add('completed');
-            
-            setTimeout(() => {
-              resetApp();
-            }, 3000);
-          } else {
-            throw new Error('Fetch failed, trying form submission');
-          }
-        })
-        .catch(fetchError => {
-          console.log('iOS fetch failed, trying form submission:', fetchError);
+        // Create form with proper iOS handling
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = WEB_APP_URL;
+        form.target = 'hidden-iframe';
+        form.style.display = 'none';
+        form.enctype = 'application/x-www-form-urlencoded';
+
+        // Add data as form field (iOS prefers this)
+        const dataInput = document.createElement('input');
+        dataInput.type = 'hidden';
+        dataInput.name = 'data';
+        dataInput.value = JSON.stringify(submissionData);
+        form.appendChild(dataInput);
+
+        // Create iframe for iOS
+        let iframe = document.getElementById('hidden-iframe');
+        if (!iframe) {
+          iframe = document.createElement('iframe');
+          iframe.id = 'hidden-iframe';
+          iframe.name = 'hidden-iframe';
+          iframe.style.display = 'none';
+          iframe.style.width = '0';
+          iframe.style.height = '0';
+          iframe.style.border = 'none';
+          document.body.appendChild(iframe);
+        }
+
+        // iOS-specific submission handling
+        let submissionTimeout;
+        let submissionAttempted = false;
+        
+        const handleSuccess = () => {
+          if (submissionAttempted) return;
+          submissionAttempted = true;
+          clearTimeout(submissionTimeout);
           
-          // Method 2: Form submission as fallback
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = WEB_APP_URL;
-          form.target = 'hidden-iframe';
-          form.style.display = 'none';
-
-          const dataInput = document.createElement('input');
-          dataInput.type = 'hidden';
-          dataInput.name = 'data';
-          dataInput.value = JSON.stringify(submissionData);
-          form.appendChild(dataInput);
-
-          let iframe = document.getElementById('hidden-iframe');
-          if (!iframe) {
-            iframe = document.createElement('iframe');
-            iframe.id = 'hidden-iframe';
-            iframe.name = 'hidden-iframe';
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-          }
-
-          // iOS-specific iframe handling with error recovery
-          let submissionTimeout;
+          console.log('iOS submission successful');
+          elements.submitBtn.classList.remove('loading');
+          successCount++;
+          updateStats();
+          showMessage(`✅ Attendance recorded successfully!`, 'success');
+          elements.submitStep.classList.remove('active');
+          elements.submitStep.classList.add('completed');
           
-          iframe.onload = () => {
-            clearTimeout(submissionTimeout);
-            console.log('iOS iframe loaded successfully');
-            setTimeout(() => {
-              elements.submitBtn.classList.remove('loading');
-              successCount++;
-              updateStats();
-              showMessage(`✅ Attendance recorded successfully!`, 'success');
-              elements.submitStep.classList.remove('active');
-              elements.submitStep.classList.add('completed');
-              
-              const submitIndicator = elements.submitStep.querySelector('.status-indicator');
-              submitIndicator.classList.remove('active');
-              submitIndicator.classList.add('completed');
-              
-              setTimeout(() => {
-                resetApp();
-              }, 3000);
-              
-              if (form.parentNode) {
-                form.parentNode.removeChild(form);
-              }
-            }, 4000);
-          };
+          const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+          submitIndicator.classList.remove('active');
+          submitIndicator.classList.add('completed');
+          
+          setTimeout(() => {
+            resetApp();
+          }, 3000);
+          
+          // Clean up
+          if (form.parentNode) {
+            form.parentNode.removeChild(form);
+          }
+        };
 
-          // Set a timeout in case iframe doesn't load
-          submissionTimeout = setTimeout(() => {
-            console.log('iOS submission timeout, assuming success');
-            elements.submitBtn.classList.remove('loading');
-            successCount++;
-            updateStats();
-            showMessage(`✅ Attendance recorded successfully!`, 'success');
-            elements.submitStep.classList.remove('active');
-            elements.submitStep.classList.add('completed');
-            
-            const submitIndicator = elements.submitStep.querySelector('.status-indicator');
-            submitIndicator.classList.remove('active');
-            submitIndicator.classList.add('completed');
-            
-            setTimeout(() => {
-              resetApp();
-            }, 3000);
-            
-            if (form.parentNode) {
-              form.parentNode.removeChild(form);
-            }
-          }, 8000);
+        // Try iframe onload first
+        iframe.onload = () => {
+          console.log('iOS iframe loaded successfully');
+          setTimeout(handleSuccess, 2000);
+        };
+        
+        // Also try onerror for debugging
+        iframe.onerror = () => {
+          console.log('iOS iframe error occurred');
+        };
 
-          document.body.appendChild(form);
-          form.submit();
-        });
+        // Set timeout as backup with retry mechanism
+        submissionTimeout = setTimeout(() => {
+          console.log('iOS submission timeout, trying alternative method');
+          
+          // Try alternative method: direct window.location approach
+          const alternativeForm = document.createElement('form');
+          alternativeForm.method = 'POST';
+          alternativeForm.action = WEB_APP_URL;
+          alternativeForm.style.display = 'none';
+          
+          const altDataInput = document.createElement('input');
+          altDataInput.type = 'hidden';
+          altDataInput.name = 'data';
+          altDataInput.value = JSON.stringify(submissionData);
+          alternativeForm.appendChild(altDataInput);
+          
+          document.body.appendChild(alternativeForm);
+          alternativeForm.submit();
+          
+          // Assume success after alternative submission
+          setTimeout(() => {
+            handleSuccess();
+          }, 3000);
+          
+        }, 8000); // 8 second timeout for iOS
+
+        // Submit the form
+        document.body.appendChild(form);
+        form.submit();
         
         return;
       }
