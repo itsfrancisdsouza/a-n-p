@@ -611,44 +611,69 @@
         location: userLocation
       };
 
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submissionData)
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        elements.submitBtn.classList.remove('loading');
-        
-        if (data.status === 'success') {
-          successCount++;
-          updateStats();
-          showMessage(`✅ Attendance recorded successfully! Log ID: ${data.logId}`, 'success');
-          elements.submitStep.classList.remove('active');
-          elements.submitStep.classList.add('completed');
+      // Create a form to submit data (bypasses CORS)
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = WEB_APP_URL;
+      form.target = 'hidden-iframe';
+      form.style.display = 'none';
+
+      // Add data as hidden inputs
+      const dataInput = document.createElement('input');
+      dataInput.type = 'hidden';
+      dataInput.name = 'data';
+      dataInput.value = JSON.stringify(submissionData);
+      form.appendChild(dataInput);
+
+      // Create hidden iframe to receive response
+      let iframe = document.getElementById('hidden-iframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'hidden-iframe';
+        iframe.name = 'hidden-iframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+
+      // Handle iframe load event
+      iframe.onload = function() {
+        try {
+          const responseText = iframe.contentDocument.body.textContent;
+          const data = JSON.parse(responseText);
           
-          // Auto-reset after 3 seconds
-          setTimeout(() => {
-            resetApp();
-          }, 3000);
-        } else {
-          throw new Error(data.message || 'Unknown error');
+          elements.submitBtn.classList.remove('loading');
+          
+          if (data.status === 'success') {
+            successCount++;
+            updateStats();
+            showMessage(`✅ Attendance recorded successfully! Log ID: ${data.logId}`, 'success');
+            elements.submitStep.classList.remove('active');
+            elements.submitStep.classList.add('completed');
+            
+            // Auto-reset after 3 seconds
+            setTimeout(() => {
+              resetApp();
+            }, 3000);
+          } else {
+            throw new Error(data.message || 'Unknown error');
+          }
+        } catch (error) {
+          errorCount++;
+          updateStats();
+          elements.submitBtn.classList.remove('loading');
+          elements.submitBtn.disabled = false;
+          
+          showMessage(`❌ Submission failed: ${error.message}`, 'error');
+          showRetrySection();
         }
-      })
-      .catch(error => {
-        errorCount++;
-        updateStats();
-        elements.submitBtn.classList.remove('loading');
-        elements.submitBtn.disabled = false;
         
-        showMessage(`❌ Submission failed: ${error.message}`, 'error');
-        showRetrySection();
-      });
+        // Clean up
+        document.body.removeChild(form);
+      };
+
+      // Submit the form
+      document.body.appendChild(form);
+      form.submit();
     }
 
     function retrySubmission() {
