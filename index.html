@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>QR Attendance with Selfie</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      background-color: #F5F5F5;
+      color: #222222;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    h2 {
+      color: #ECA02D;
+      text-align: center;
+      margin-top: 32px;
+    }
+    #reader, #selfieCam, #canvas, #submitBtn {
+      display: none;
+    }
+    #reader.active, #selfieCam.active, #canvas.active, #submitBtn.active {
+      display: block;
+      margin: 18px auto;
+    }
+    #reader {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(34,34,34,0.06);
+      padding: 14px;
+      width: 300px;
+    }
+    #message {
+      text-align: center;
+      color: #222222;
+      margin-top: 18px;
+      font-size: 1.08em;
+    }
+    #captureBtn, #submitBtn {
+      margin: 18px auto 0 auto;
+      background-color: #ECA02D;
+      color: #222222;
+      border: none;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 13px 34px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: block;
+    }
+    #captureBtn:disabled, #submitBtn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    #captureBtn:hover:not(:disabled), #submitBtn:hover:not(:disabled) {
+      background-color: #222222;
+      color: #ECA02D;
+      border: 1px solid #ECA02D;
+    }
+    #selfieCam, #canvas {
+      border: 3px solid #ECA02D;
+      border-radius: 10px;
+      background: #fff;
+      width: 300px;
+      height: 225px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Scan QR Code and Take Selfie</h2>
+  <div id="reader" class="active"></div>
+  <video id="selfieCam" width="300" height="225" autoplay muted></video>
+  <button id="captureBtn" disabled>Take Selfie</button>
+  <canvas id="canvas" width="300" height="225"></canvas>
+  <button id="submitBtn" disabled>Submit Attendance</button>
+  <div id="message"></div>
+
+  <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxFajMmSMwacu7jXCF__LH-sy9IkFkVf-QSF47bALVmzxdSFCtN6B7F3UnNvXfKnYqzqQ/exec';
+    let scannedId = '';
+    let selfieData = '';
+    const readerDiv = document.getElementById('reader');
+    const selfieCam = document.getElementById('selfieCam');
+    const captureBtn = document.getElementById('captureBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const canvas = document.getElementById('canvas');
+    const messageDiv = document.getElementById('message');
+
+    // Only enable selfie after QR scan
+    captureBtn.disabled = true;
+    submitBtn.disabled = true;
+
+    // Initialize QR Reader
+    const qrReader = new Html5Qrcode("reader");
+    Html5Qrcode.getCameras()
+      .then(cameras => {
+        if (cameras.length) {
+          qrReader.start(
+            cameras[0].id,
+            { fps: 10, qrbox: 250 },
+            (decoded) => {
+              scannedId = decoded;
+              qrReader.stop();
+              readerDiv.classList.remove("active");
+              showMessage(`Scanned ID: ${scannedId}. Now take a selfie.`);
+              enableSelfie();
+            }
+          );
+        } else {
+          showMessage('No camera detected.');
+        }
+      })
+      .catch(() => showMessage('Camera access error.'));
+
+    function enableSelfie() {
+      selfieCam.classList.add("active");
+      captureBtn.classList.add("active");
+      captureBtn.disabled = false;
+
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          selfieCam.srcObject = stream;
+        })
+        .catch(() => showMessage('Could not access camera for selfie.'));
+    }
+
+    captureBtn.onclick = () => {
+      // Take selfie, then enable the "Submit" button
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(selfieCam, 0, 0, canvas.width, canvas.height);
+      // Freeze image preview
+      canvas.classList.add("active");
+      selfieData = canvas.toDataURL('image/png');
+      // Stop video stream
+      if (selfieCam.srcObject) {
+        selfieCam.srcObject.getTracks().forEach(track => track.stop());
+      }
+      // Hide video/camera
+      selfieCam.classList.remove("active");
+      captureBtn.disabled = true;
+      submitBtn.classList.add("active");
+      submitBtn.disabled = false;
+      showMessage('Selfie taken. Now submit for attendance.');
+    };
+
+    submitBtn.onclick = () => {
+      if (!scannedId || !selfieData) {
+        showMessage('Scan QR and take selfie first.');
+        return;
+      }
+      submitBtn.disabled = true;
+      showMessage('Submitting...');
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: scannedId, selfie: selfieData })
+      })
+      .then(res => res.json())
+      .then(data => {
+        showMessage(data.status === 'success'
+          ? `Attendance recorded! Log ID: ${data.logId}`
+          : `Error: ${data.message}`);
+      })
+      .catch(() => {
+        showMessage('Network error');
+      });
+    };
+
+    function showMessage(msg) {
+      messageDiv.innerText = msg;
+    }
+  </script>
+</body>
+</html>
