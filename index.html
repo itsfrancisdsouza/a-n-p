@@ -1017,7 +1017,7 @@
         <span class="status-indicator"></span>
         Step 2: Take Selfie
       </div>
-      <video id="selfieCam" autoplay muted></video>
+      <video id="selfieCam" autoplay muted playsinline webkit-playsinline></video>
       <canvas id="canvas" class="hidden"></canvas>
       <div class="preview-container hidden" id="previewContainer">
         <img id="preview" alt="Selfie Preview">
@@ -1271,18 +1271,46 @@
       
       elements.captureBtn.disabled = false;
       
+      // iOS-friendly camera configuration
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const videoConstraints = {
+        facingMode: 'user',
+        width: { ideal: 640, min: 320, max: 1280 },
+        height: { ideal: 800, min: 400, max: 1600 },
+        aspectRatio: { ideal: 4/5 }
+      };
+      
+      // iOS-specific optimizations
+      if (isIOS) {
+        // Remove aspectRatio constraint for iOS as it can cause issues
+        delete videoConstraints.aspectRatio;
+        // Use more conservative resolution for iOS
+        videoConstraints.width = { ideal: 480, min: 320, max: 640 };
+        videoConstraints.height = { ideal: 600, min: 400, max: 800 };
+      }
+      
       navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'user',
-          width: { ideal: 640, min: 320, max: 1280 },
-          height: { ideal: 800, min: 400, max: 1600 },
-          aspectRatio: { ideal: 4/5 }
-        } 
+        video: videoConstraints,
+        audio: false // Explicitly disable audio to prevent video recording mode
       })
       .then(stream => {
         currentStream = stream;
         elements.selfieCam.srcObject = stream;
-        showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
+        
+        // iOS-specific: Wait for video to be ready
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          elements.selfieCam.addEventListener('loadedmetadata', () => {
+            // Ensure video is playing on iOS
+            elements.selfieCam.play().then(() => {
+              showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
+            }).catch(() => {
+              showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
+            });
+          }, { once: true });
+        } else {
+          showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
+        }
       })
       .catch(error => {
         showMessage('Could not access camera: ' + error.message, 'error');
@@ -1305,28 +1333,50 @@
       const canvas = elements.canvas;
       const ctx = canvas.getContext('2d');
       
-      // Set canvas size to match video aspect ratio
-      const aspectRatio = 4/5;
-      const maxWidth = 640;
-      const maxHeight = 800;
+      // iOS-specific: Ensure video is ready before capturing
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS && (video.videoWidth === 0 || video.videoHeight === 0)) {
+        showMessage('Camera not ready yet. Please wait a moment...', 'info');
+        setTimeout(captureSelfie, 500);
+        return;
+      }
       
-      let canvasWidth = maxWidth;
-      let canvasHeight = maxHeight;
+      // iOS-friendly canvas configuration
       
-      // Maintain aspect ratio
-      if (canvasWidth / canvasHeight > aspectRatio) {
-        canvasWidth = canvasHeight * aspectRatio;
-      } else {
-        canvasHeight = canvasWidth / aspectRatio;
+      // Get actual video dimensions
+      const videoWidth = video.videoWidth;
+      const videoHeight = video.videoHeight;
+      
+      // Set canvas size based on actual video dimensions
+      let canvasWidth = videoWidth;
+      let canvasHeight = videoHeight;
+      
+      // For iOS, use more conservative dimensions to prevent memory issues
+      if (isIOS) {
+        const maxDimension = 640;
+        if (canvasWidth > maxDimension || canvasHeight > maxDimension) {
+          if (canvasWidth > canvasHeight) {
+            canvasHeight = (canvasHeight * maxDimension) / canvasWidth;
+            canvasWidth = maxDimension;
+          } else {
+            canvasWidth = (canvasWidth * maxDimension) / canvasHeight;
+            canvasHeight = maxDimension;
+          }
+        }
       }
       
       canvas.width = canvasWidth;
       canvas.height = canvasHeight;
       
-      // Draw video frame to canvas maintaining aspect ratio
+      // Clear canvas first
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      
+      // Draw video frame to canvas
       ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
       
-      selfieData = canvas.toDataURL('image/jpeg', 0.8);
+      // Use higher quality for iOS
+      const quality = isIOS ? 0.9 : 0.8;
+      selfieData = canvas.toDataURL('image/jpeg', quality);
       
       // Show preview
       elements.preview.src = selfieData;
