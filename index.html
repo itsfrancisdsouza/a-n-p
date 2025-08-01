@@ -14,8 +14,8 @@
     }
 
     body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #333;
+      background: #F5F5F5;
+      color: #222222;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       min-height: 100vh;
       display: flex;
@@ -40,14 +40,14 @@
     }
 
     .header h1 {
-      color: #4a5568;
+      color: #222222;
       font-size: 2.2em;
       font-weight: 700;
       margin-bottom: 10px;
     }
 
     .header p {
-      color: #718096;
+      color: #666666;
       font-size: 1.1em;
     }
 
@@ -75,8 +75,8 @@
       margin: 25px 0;
       padding: 30px;
       border-radius: 20px;
-      background: #f7fafc;
-      border: 2px solid #e2e8f0;
+      background: #FFFFFF;
+      border: 2px solid #E0E0E0;
       transition: all 0.3s ease;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       position: relative;
@@ -84,21 +84,21 @@
     }
 
     .step-container.active {
-      border-color: #4299e1;
-      background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
-      box-shadow: 0 8px 25px rgba(66, 153, 225, 0.2);
+      border-color: #ECA02D;
+      background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+      box-shadow: 0 8px 25px rgba(236, 160, 45, 0.2);
     }
 
     .step-container.completed {
-      border-color: #48bb78;
-      background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
-      box-shadow: 0 8px 25px rgba(72, 187, 120, 0.2);
+      border-color: #4CAF50;
+      background: linear-gradient(135deg, #E8F5E8 0%, #C8E6C9 100%);
+      box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2);
     }
 
     .step-title {
       font-size: 1.4em;
       font-weight: 700;
-      color: #2d3748;
+      color: #222222;
       margin-bottom: 25px;
       display: flex;
       align-items: center;
@@ -111,8 +111,8 @@
     .step-title i {
       margin-right: 15px;
       font-size: 1.3em;
-      color: #4299e1;
-      background: rgba(66, 153, 225, 0.1);
+      color: #ECA02D;
+      background: rgba(236, 160, 45, 0.1);
       padding: 10px;
       border-radius: 50%;
       width: 40px;
@@ -127,13 +127,13 @@
       width: 15px;
       height: 15px;
       border-radius: 50%;
-      background: #e2e8f0;
+      background: #E0E0E0;
       transition: all 0.3s ease;
     }
 
     .step-title .status-indicator.active {
-      background: #48bb78;
-      box-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+      background: #ECA02D;
+      box-shadow: 0 0 10px rgba(236, 160, 45, 0.5);
       animation: pulse 2s infinite;
     }
 
@@ -219,8 +219,8 @@
     }
 
     .btn {
-      background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-      color: white;
+      background: linear-gradient(135deg, #ECA02D 0%, #D68910 100%);
+      color: #222222;
       border: none;
       font-weight: 600;
       font-size: 16px;
@@ -232,17 +232,17 @@
       min-width: 160px;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+      box-shadow: 0 4px 12px rgba(236, 160, 45, 0.3);
     }
 
     .btn:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(66, 153, 225, 0.4);
+      box-shadow: 0 8px 25px rgba(236, 160, 45, 0.4);
     }
 
     .btn:active:not(:disabled) {
       transform: translateY(0);
-      box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+      box-shadow: 0 4px 12px rgba(236, 160, 45, 0.3);
     }
 
     .btn:disabled {
@@ -253,30 +253,33 @@
     }
 
     .btn.secondary {
-      background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
-      box-shadow: 0 4px 12px rgba(113, 128, 150, 0.3);
+      background: linear-gradient(135deg, #9E9E9E 0%, #757575 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(158, 158, 158, 0.3);
     }
 
     .btn.secondary:hover:not(:disabled) {
-      box-shadow: 0 8px 25px rgba(113, 128, 150, 0.4);
+      box-shadow: 0 8px 25px rgba(158, 158, 158, 0.4);
     }
 
     .btn.success {
-      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-      box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+      background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
     }
 
     .btn.success:hover:not(:disabled) {
-      box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+      box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
     }
 
     .btn.danger {
-      background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
-      box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+      background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
     }
 
     .btn.danger:hover:not(:disabled) {
-      box-shadow: 0 8px 25px rgba(245, 101, 101, 0.4);
+      box-shadow: 0 8px 25px rgba(244, 67, 54, 0.4);
     }
 
     .loading {
@@ -314,21 +317,21 @@
     }
 
     .message-success {
-      background: #f0fff4;
-      color: #22543d;
-      border: 1px solid #9ae6b4;
+      background: #E8F5E8;
+      color: #2E7D32;
+      border: 1px solid #4CAF50;
     }
 
     .message-error {
-      background: #fed7d7;
-      color: #742a2a;
-      border: 1px solid #feb2b2;
+      background: #FFEBEE;
+      color: #C62828;
+      border: 1px solid #F44336;
     }
 
     .message-info {
-      background: #ebf8ff;
-      color: #2a4365;
-      border: 1px solid #90cdf4;
+      background: #FFF8E1;
+      color: #F57C00;
+      border: 1px solid #ECA02D;
     }
 
     .hidden {
@@ -347,10 +350,10 @@
     .retry-section {
       margin-top: 20px;
       padding: 15px;
-      background: #fff3cd;
-      border: 1px solid #ffeaa7;
+      background: #FFF8E1;
+      border: 1px solid #ECA02D;
       border-radius: 10px;
-      color: #856404;
+      color: #F57C00;
     }
 
     .stats {
@@ -358,8 +361,10 @@
       justify-content: space-around;
       margin-top: 20px;
       padding: 15px;
-      background: #f8f9fa;
+      background: #FFFFFF;
+      border: 2px solid #E0E0E0;
       border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
 
     .stat-item {
@@ -369,21 +374,21 @@
     .stat-value {
       font-size: 1.5em;
       font-weight: bold;
-      color: #4299e1;
+      color: #ECA02D;
     }
 
     .stat-label {
       font-size: 0.9em;
-      color: #718096;
+      color: #666666;
     }
 
     .location-info {
       margin: 20px 0;
       padding: 20px;
-      background: linear-gradient(135deg, #f0f9eb 0%, #e8f5e8 100%);
-      border: 2px solid #a5d6a7;
+      background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+      border: 2px solid #ECA02D;
       border-radius: 15px;
-      box-shadow: 0 4px 12px rgba(165, 214, 167, 0.2);
+      box-shadow: 0 4px 12px rgba(236, 160, 45, 0.2);
     }
 
     .info-item {
@@ -395,9 +400,9 @@
 
     .info-item i {
       margin-right: 12px;
-      color: #4299e1;
+      color: #ECA02D;
       font-size: 1.2em;
-      background: rgba(66, 153, 225, 0.1);
+      background: rgba(236, 160, 45, 0.1);
       padding: 8px;
       border-radius: 50%;
       width: 35px;
@@ -410,14 +415,14 @@
     .info-item span {
       font-size: 1.1em;
       font-weight: 600;
-      color: #2d3748;
+      color: #222222;
     }
 
     .branch-selection {
       margin: 25px 0;
       padding: 20px;
-      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-      border: 2px solid #e2e8f0;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%);
+      border: 2px solid #E0E0E0;
       border-radius: 15px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       text-align: center;
@@ -427,18 +432,18 @@
       display: block;
       font-size: 1.2em;
       font-weight: 600;
-      color: #2d3748;
+      color: #222222;
       margin-bottom: 15px;
     }
 
     .branch-dropdown {
       padding: 12px 20px;
-      border: 2px solid #cbd5e0;
+      border: 2px solid #E0E0E0;
       border-radius: 10px;
       font-size: 1.1em;
       font-weight: 500;
-      color: #4a5568;
-      background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+      color: #222222;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%);
       cursor: pointer;
       width: 280px;
       max-width: 100%;
@@ -448,14 +453,14 @@
 
     .branch-dropdown:focus {
       outline: none;
-      border-color: #4299e1;
-      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+      border-color: #ECA02D;
+      box-shadow: 0 0 0 3px rgba(236, 160, 45, 0.2);
       transform: translateY(-1px);
     }
 
     .branch-dropdown:hover {
-      border-color: #4299e1;
-      box-shadow: 0 4px 12px rgba(66, 153, 225, 0.15);
+      border-color: #ECA02D;
+      box-shadow: 0 4px 12px rgba(236, 160, 45, 0.15);
     }
 
     @media (max-width: 600px) {
@@ -539,8 +544,7 @@
       <div class="branch-selection">
         <label for="branchSelect">Select Branch:</label>
         <select id="branchSelect" class="branch-dropdown">
-          <option value="">Select a branch...</option>
-          <option value="Shanuzz Academy">Shanuzz Academy</option>
+          <option value="">Loading branches...</option>
         </select>
       </div>
       <button id="submitBtn" class="btn success" disabled>
@@ -596,11 +600,15 @@
     let retryCount = 0;
     const maxRetries = 3;
     let userLocation = null; // Add location state
+    let staffDatabase = []; // Add staff database state
     
     // Stats
     let scanCount = 0;
     let successCount = 0;
     let errorCount = 0;
+
+    // Staff database CSV URL
+    const STAFF_DB_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTktOv0rOPllFSkl7K5aVOx9gb_xsXF8F-MSj04RHmXMQHmzxAI_KL6VN-_38WG5mI0Gkh62ls1TXKA/pub?gid=0&single=true&output=csv';
 
     // DOM elements
     const elements = {
@@ -634,6 +642,7 @@
       initializeQRScanner();
       setupEventListeners();
       updateStats();
+      fetchStaffDatabase(); // Fetch staff database
     }
 
     // Get user location
@@ -994,21 +1003,20 @@
     }
 
     function validateLocation(selectedBranch) {
-      // Branch coordinates (you can add more branches here)
-      const branchCoordinates = {
-        'Shanuzz Academy': {
-          latitude: 19.10718325858879,
-          longitude: 72.88286798538499
-        }
-      };
-
-      if (branchCoordinates[selectedBranch]) {
-        const branch = branchCoordinates[selectedBranch];
+      // Find the branch in the staff database
+      const branchData = staffDatabase.find(branch => branch['Branch'] === selectedBranch);
+      
+      if (branchData && branchData['Location']) {
+        // Parse location coordinates from the database
+        const locationCoords = branchData['Location'].split(',').map(coord => parseFloat(coord.trim()));
+        const branchLatitude = locationCoords[0];
+        const branchLongitude = locationCoords[1];
+        
         const distance = calculateDistance(
           userLocation.latitude, 
           userLocation.longitude,
-          branch.latitude, 
-          branch.longitude
+          branchLatitude, 
+          branchLongitude
         );
 
         elements.branchText.textContent = `Branch: ${selectedBranch}`;
@@ -1016,15 +1024,15 @@
 
         // Check if within 100m
         if (distance <= 100) {
-          elements.distanceText.innerHTML = `<span style="color: #48bb78;">✓ Distance: ${distance.toFixed(1)}m (Valid)</span>`;
+          elements.distanceText.innerHTML = `<span style="color: #4CAF50;">✓ Distance: ${distance.toFixed(1)}m (Valid)</span>`;
           elements.submitBtn.disabled = false;
         } else {
-          elements.distanceText.innerHTML = `<span style="color: #f56565;">✗ Distance: ${distance.toFixed(1)}m (Too far - must be within 100m)</span>`;
+          elements.distanceText.innerHTML = `<span style="color: #F44336;">✗ Distance: ${distance.toFixed(1)}m (Too far - must be within 100m)</span>`;
           elements.submitBtn.disabled = true;
         }
       } else {
         elements.branchText.textContent = `Branch: ${selectedBranch}`;
-        elements.distanceText.textContent = 'Distance: Unknown branch';
+        elements.distanceText.textContent = 'Distance: Branch location not found';
         elements.submitBtn.disabled = true;
       }
     }
@@ -1048,6 +1056,82 @@
       if (selectedBranch && userLocation) {
         validateLocation(selectedBranch);
       }
+    }
+
+    async function fetchStaffDatabase() {
+      try {
+        showMessage('Loading staff database...', 'info');
+        const response = await fetch(STAFF_DB_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const csvText = await response.text();
+        
+        // Parse CSV properly (handle quoted values)
+        const rows = parseCSV(csvText);
+        
+        // Assuming the first row is headers and subsequent rows are data
+        const headers = rows[0];
+        const dataRows = rows.slice(1);
+
+        staffDatabase = dataRows.map(row => {
+          const branch = {};
+          headers.forEach((header, index) => {
+            branch[header.trim()] = row[index] ? row[index].trim() : '';
+          });
+          return branch;
+        });
+
+        // Populate branch dropdown
+        const branchSelect = document.getElementById('branchSelect');
+        branchSelect.innerHTML = '<option value="">Select a branch...</option>';
+        
+        // Get unique branches from the database
+        const uniqueBranches = [...new Set(staffDatabase.map(branch => branch['Branch']).filter(branch => branch))];
+        
+        uniqueBranches.forEach(branchName => {
+          const option = document.createElement('option');
+          option.value = branchName;
+          option.textContent = branchName;
+          branchSelect.appendChild(option);
+        });
+        
+        showMessage('Staff database loaded successfully!', 'success');
+      } catch (error) {
+        console.error('Error fetching staff database:', error);
+        showMessage('Failed to load staff database. Please try again later.', 'error');
+      }
+    }
+
+    function parseCSV(csvText) {
+      const rows = [];
+      const lines = csvText.split('\n');
+      
+      for (let line of lines) {
+        if (line.trim() === '') continue;
+        
+        const row = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            row.push(current);
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        
+        row.push(current);
+        rows.push(row);
+      }
+      
+      return rows;
     }
 
     // Initialize when page loads
