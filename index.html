@@ -141,12 +141,29 @@
       background: #E0E0E0;
       transition: all 0.3s ease;
       flex-shrink: 0;
+      position: relative;
     }
 
     .step-title .status-indicator.active {
       background: #ECA02D;
       box-shadow: 0 0 10px rgba(236, 160, 45, 0.5);
       animation: pulse 2s infinite;
+    }
+
+    .step-title .status-indicator.completed {
+      background: #4CAF50;
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+    }
+
+    .step-title .status-indicator.completed::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 8px;
+      font-weight: bold;
     }
 
     #reader {
@@ -943,8 +960,15 @@
       updateStats();
       
       qrReader.stop();
+      
+      // Update step indicators
       elements.qrStep.classList.remove('active');
       elements.qrStep.classList.add('completed');
+      
+      // Update status indicator
+      const qrIndicator = elements.qrStep.querySelector('.status-indicator');
+      qrIndicator.classList.remove('active');
+      qrIndicator.classList.add('completed');
       
       showMessage(`QR Code scanned successfully! ID: ${scannedId}`, 'success');
       setTimeout(() => {
@@ -958,6 +982,11 @@
 
     function enableSelfieCapture() {
       elements.selfieStep.classList.add('active');
+      
+      // Update status indicator for selfie step
+      const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
+      selfieIndicator.classList.add('active');
+      
       elements.captureBtn.disabled = false;
       
       navigator.mediaDevices.getUserMedia({ 
@@ -1036,6 +1065,14 @@
       elements.selfieStep.classList.add('completed');
       elements.submitStep.classList.add('active');
       
+      // Update status indicators
+      const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
+      selfieIndicator.classList.remove('active');
+      selfieIndicator.classList.add('completed');
+      
+      const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+      submitIndicator.classList.add('active');
+      
       showMessage('Selfie captured! Click "Submit Attendance" to continue.', 'success');
     }
 
@@ -1106,6 +1143,11 @@
             elements.submitStep.classList.remove('active');
             elements.submitStep.classList.add('completed');
             
+            // Update submit step indicator to completed
+            const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+            submitIndicator.classList.remove('active');
+            submitIndicator.classList.add('completed');
+            
             // Auto-reset after 3 seconds
             setTimeout(() => {
               resetApp();
@@ -1168,6 +1210,17 @@
       elements.qrStep.classList.add('active');
       elements.selfieStep.classList.remove('active', 'completed');
       elements.submitStep.classList.remove('active', 'completed');
+      
+      // Reset status indicators
+      const qrIndicator = elements.qrStep.querySelector('.status-indicator');
+      qrIndicator.classList.remove('completed');
+      qrIndicator.classList.add('active');
+      
+      const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
+      selfieIndicator.classList.remove('active', 'completed');
+      
+      const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+      submitIndicator.classList.remove('active', 'completed');
       
       // Hide elements
       elements.previewContainer.classList.add('hidden');
