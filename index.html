@@ -233,7 +233,7 @@
       height: clamp(200px, 50vw, 250px);
       object-fit: cover;
       box-sizing: border-box;
-      aspect-ratio: 4/3;
+      aspect-ratio: 4/5;
     }
 
     .preview-container {
@@ -252,7 +252,7 @@
       height: clamp(200px, 50vw, 250px);
       object-fit: cover;
       box-sizing: border-box;
-      aspect-ratio: 4/3;
+      aspect-ratio: 4/5;
     }
 
     .btn {
@@ -642,8 +642,8 @@
       }
 
       #selfieCam, #canvas, #preview {
-        height: 240px;
-        aspect-ratio: 4/3;
+        height: 300px;
+        aspect-ratio: 4/5;
       }
 
       .location-info {
@@ -683,8 +683,8 @@
 
       #selfieCam, #canvas, #preview {
         max-width: 400px;
-        height: 300px;
-        aspect-ratio: 4/3;
+        height: 500px;
+        aspect-ratio: 4/5;
       }
     }
 
@@ -993,8 +993,8 @@
         video: { 
           facingMode: 'user',
           width: { ideal: 640, min: 320, max: 1280 },
-          height: { ideal: 480, min: 240, max: 960 },
-          aspectRatio: { ideal: 4/3 }
+          height: { ideal: 800, min: 400, max: 1600 },
+          aspectRatio: { ideal: 4/5 }
         } 
       })
       .then(stream => {
@@ -1024,9 +1024,9 @@
       const ctx = canvas.getContext('2d');
       
       // Set canvas size to match video aspect ratio
-      const aspectRatio = 4/3;
+      const aspectRatio = 4/5;
       const maxWidth = 640;
-      const maxHeight = 480;
+      const maxHeight = 800;
       
       let canvasWidth = maxWidth;
       let canvasHeight = maxHeight;
