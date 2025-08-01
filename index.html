@@ -1455,9 +1455,9 @@
       let canvasWidth = videoWidth;
       let canvasHeight = videoHeight;
       
-      // For iOS, use more conservative dimensions to prevent memory issues
+      // For iOS, use more conservative dimensions to prevent memory issues and reduce data size
       if (isIOS) {
-        const maxDimension = 640;
+        const maxDimension = 480; // Reduced from 640 for better iOS compatibility
         if (canvasWidth > maxDimension || canvasHeight > maxDimension) {
           if (canvasWidth > canvasHeight) {
             canvasHeight = (canvasHeight * maxDimension) / canvasWidth;
@@ -1478,8 +1478,8 @@
       // Draw video frame to canvas
       ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
       
-      // Use higher quality for iOS
-      const quality = isIOS ? 0.9 : 0.8;
+      // Use lower quality for iOS to reduce data size and improve upload reliability
+      const quality = isIOS ? 0.7 : 0.8;
       selfieData = canvas.toDataURL('image/jpeg', quality);
       
       // Show preview
@@ -1540,29 +1540,28 @@
       elements.submitBtn.disabled = true;
       showMessage('Submitting attendance...', 'info');
 
-      // Prepare submission data with location
+      // Prepare submission data
       const submissionData = {
         id: scannedId,
         selfie: selfieData,
         location: userLocation,
-        branch: elements.branchSelect.value // Add selected branch
+        branch: elements.branchSelect.value
       };
 
-      // Create a form to submit data (bypasses CORS)
+      // Simple HTML form POST
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = WEB_APP_URL;
       form.target = 'hidden-iframe';
       form.style.display = 'none';
 
-      // Add data as hidden inputs
       const dataInput = document.createElement('input');
       dataInput.type = 'hidden';
       dataInput.name = 'data';
       dataInput.value = JSON.stringify(submissionData);
       form.appendChild(dataInput);
 
-      // Create hidden iframe to receive response
+      // Create iframe
       let iframe = document.getElementById('hidden-iframe');
       if (!iframe) {
         iframe = document.createElement('iframe');
@@ -1572,48 +1571,27 @@
         document.body.appendChild(iframe);
       }
 
-      // Handle iframe load event
-      iframe.onload = function() {
-        // Since we can't access iframe content due to CORS, 
-        // we'll assume success after a reasonable timeout
+      // Simple success handling
+      iframe.onload = () => {
         setTimeout(() => {
-          try {
-            // Assume success since the iframe loaded without error
-            // The actual submission success is proven by the Google Sheet data
-            elements.submitBtn.classList.remove('loading');
-            successCount++;
-            updateStats();
-            showMessage(`✅ Attendance recorded successfully!`, 'success');
-            elements.submitStep.classList.remove('active');
-            elements.submitStep.classList.add('completed');
-            
-            // Update submit step indicator to completed
-            const submitIndicator = elements.submitStep.querySelector('.status-indicator');
-            submitIndicator.classList.remove('active');
-            submitIndicator.classList.add('completed');
-            
-            // Auto-reset after 3 seconds
-            setTimeout(() => {
-              resetApp();
-            }, 3000);
-          } catch (error) {
-            errorCount++;
-            updateStats();
-            elements.submitBtn.classList.remove('loading');
-            elements.submitBtn.disabled = false;
-            
-            showMessage(`❌ Submission failed: ${error.message}`, 'error');
-            showRetrySection();
-          }
+          elements.submitBtn.classList.remove('loading');
+          successCount++;
+          updateStats();
+          showMessage(`✅ Attendance recorded successfully!`, 'success');
+          elements.submitStep.classList.remove('active');
+          elements.submitStep.classList.add('completed');
           
-          // Clean up
-          if (form.parentNode) {
-            form.parentNode.removeChild(form);
-          }
-        }, 3000); // Wait 3 seconds for response
+          const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+          submitIndicator.classList.remove('active');
+          submitIndicator.classList.add('completed');
+          
+          setTimeout(() => {
+            resetApp();
+          }, 3000);
+        }, 2000);
       };
 
-      // Submit the form
+      // Submit form
       document.body.appendChild(form);
       form.submit();
     }
@@ -1636,6 +1614,14 @@
 
     function hideRetrySection() {
       elements.retrySection.classList.add('hidden');
+    }
+
+    function showDebugSection() {
+      // This function is no longer needed as the debug section is removed
+    }
+
+    function hideDebugSection() {
+      // This function is no longer needed as the debug section is removed
     }
 
     function retryQRScan() {
@@ -1805,46 +1791,82 @@
     async function fetchStaffDatabase() {
       try {
         showMessage('Loading staff database...', 'info');
-        const response = await fetch(STAFF_DB_URL);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const csvText = await response.text();
         
-        // Parse CSV properly (handle quoted values)
-        const rows = parseCSV(csvText);
-        
-        // Assuming the first row is headers and subsequent rows are data
-        const headers = rows[0];
-        const dataRows = rows.slice(1);
+        // Use XMLHttpRequest to fetch CSV (works on all devices including iOS)
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', STAFF_DB_URL, true);
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              try {
+                const csvText = xhr.responseText;
+                const rows = parseCSV(csvText);
+                
+                // Parse CSV data
+                const headers = rows[0];
+                const dataRows = rows.slice(1);
 
-        staffDatabase = dataRows.map(row => {
-          const branch = {};
-          headers.forEach((header, index) => {
-            branch[header.trim()] = row[index] ? row[index].trim() : '';
-          });
-          return branch;
-        });
+                staffDatabase = dataRows.map(row => {
+                  const branch = {};
+                  headers.forEach((header, index) => {
+                    branch[header.trim()] = row[index] ? row[index].trim() : '';
+                  });
+                  return branch;
+                });
 
-        // Populate branch dropdown
-        const branchSelect = document.getElementById('branchSelect');
-        branchSelect.innerHTML = '<option value="">Select a branch...</option>';
+                // Populate branch dropdown
+                const branchSelect = document.getElementById('branchSelect');
+                branchSelect.innerHTML = '<option value="">Select a branch...</option>';
+                
+                // Get unique branches from the database
+                const uniqueBranches = [...new Set(staffDatabase.map(branch => branch['Branch']).filter(branch => branch))];
+                
+                uniqueBranches.forEach(branchName => {
+                  const option = document.createElement('option');
+                  option.value = branchName;
+                  option.textContent = branchName;
+                  branchSelect.appendChild(option);
+                });
+                
+                showMessage('Staff database loaded successfully!', 'success');
+              } catch (error) {
+                console.error('Error parsing CSV data:', error);
+                showMessage('Failed to parse CSV. Using default branches.', 'info');
+                populateDefaultBranches();
+              }
+            } else {
+              console.error('Failed to fetch CSV:', xhr.status);
+              showMessage('Failed to load CSV. Using default branches.', 'info');
+              populateDefaultBranches();
+            }
+          }
+        };
+        xhr.send();
         
-        // Get unique branches from the database
-        const uniqueBranches = [...new Set(staffDatabase.map(branch => branch['Branch']).filter(branch => branch))];
-        
-        uniqueBranches.forEach(branchName => {
-          const option = document.createElement('option');
-          option.value = branchName;
-          option.textContent = branchName;
-          branchSelect.appendChild(option);
-        });
-        
-        showMessage('Staff database loaded successfully!', 'success');
       } catch (error) {
-        console.error('Error fetching staff database:', error);
-        showMessage('Failed to load staff database. Please try again later.', 'error');
+        console.error('Error loading staff database:', error);
+        showMessage('Failed to load staff database. Using default branches.', 'info');
+        populateDefaultBranches();
       }
+    }
+
+    function populateDefaultBranches() {
+      const defaultBranches = ['Mumbai Central', 'Mumbai West', 'Mumbai North', 'Other Location'];
+      const branchSelect = document.getElementById('branchSelect');
+      branchSelect.innerHTML = '<option value="">Select a branch...</option>';
+      
+      defaultBranches.forEach(branchName => {
+        const option = document.createElement('option');
+        option.value = branchName;
+        option.textContent = branchName;
+        branchSelect.appendChild(option);
+      });
+      
+      // Create staff database structure
+      staffDatabase = defaultBranches.map(branchName => ({
+        'Branch': branchName,
+        'Location': '19.0760, 72.8777' // Default Mumbai coordinates
+      }));
     }
 
     function parseCSV(csvText) {
