@@ -1540,15 +1540,25 @@
       elements.submitBtn.disabled = true;
       showMessage('Submitting attendance...', 'info');
 
-      // Prepare submission data
+      // Prepare and validate submission data
       const submissionData = {
-        id: scannedId,
+        id: sanitizeInput(scannedId),
         selfie: selfieData,
         location: userLocation,
-        branch: elements.branchSelect.value
+        branch: sanitizeInput(elements.branchSelect.value)
       };
 
-      // Simple HTML form POST
+      // Validate input data
+      try {
+        validateSubmissionData(submissionData);
+      } catch (error) {
+        elements.submitBtn.classList.remove('loading');
+        elements.submitBtn.disabled = false;
+        showMessage(`❌ Validation failed: ${error.message}`, 'error');
+        return;
+      }
+
+      // Create form for submission
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = WEB_APP_URL;
@@ -1561,35 +1571,83 @@
       dataInput.value = JSON.stringify(submissionData);
       form.appendChild(dataInput);
 
-      // Create iframe
-      let iframe = document.getElementById('hidden-iframe');
-      if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'hidden-iframe';
-        iframe.name = 'hidden-iframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-      }
+      // Create iframe with proper management
+      const iframe = createIframe('hidden-iframe', 'hidden-iframe');
+      
+      let submissionTimeout;
+      let submissionAttempted = false;
 
-      // Simple success handling
-      iframe.onload = () => {
+      const handleSuccess = () => {
+        if (submissionAttempted) return;
+        submissionAttempted = true;
+        clearTimeout(submissionTimeout);
+        
+        elements.submitBtn.classList.remove('loading');
+        successCount++;
+        updateStats();
+        showMessage(`✅ Attendance recorded successfully!`, 'success');
+        elements.submitStep.classList.remove('active');
+        elements.submitStep.classList.add('completed');
+        
+        const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+        submitIndicator.classList.remove('active');
+        submitIndicator.classList.add('completed');
+        
         setTimeout(() => {
-          elements.submitBtn.classList.remove('loading');
-          successCount++;
-          updateStats();
-          showMessage(`✅ Attendance recorded successfully!`, 'success');
-          elements.submitStep.classList.remove('active');
-          elements.submitStep.classList.add('completed');
-          
-          const submitIndicator = elements.submitStep.querySelector('.status-indicator');
-          submitIndicator.classList.remove('active');
-          submitIndicator.classList.add('completed');
-          
-          setTimeout(() => {
-            resetApp();
-          }, 3000);
-        }, 2000);
+          resetApp();
+        }, 3000);
+        
+        // Clean up resources
+        cleanupForm(form);
+        setTimeout(() => cleanupIframe('hidden-iframe'), 5000);
       };
+
+      const handleError = (error) => {
+        if (submissionAttempted) return;
+        submissionAttempted = true;
+        clearTimeout(submissionTimeout);
+        
+        console.error('Form submission failed:', error);
+        errorCount++;
+        updateStats();
+        elements.submitBtn.classList.remove('loading');
+        elements.submitBtn.disabled = false;
+        
+        // Show specific error messages
+        let errorMessage = 'Submission failed';
+        if (error.includes('Rate limit')) {
+          errorMessage = 'Too many submissions. Please wait a moment and try again.';
+        } else if (error.includes('Validation failed')) {
+          errorMessage = error;
+        } else if (error.includes('Network error')) {
+          errorMessage = 'Network connection issue. Please check your internet and try again.';
+        } else if (error.includes('timeout')) {
+          errorMessage = 'Request timed out. Please try again.';
+        } else {
+          errorMessage = `Submission failed: ${error}`;
+        }
+        
+        showMessage(`❌ ${errorMessage}`, 'error');
+        showRetrySection();
+        
+        // Clean up resources
+        cleanupForm(form);
+        setTimeout(() => cleanupIframe('hidden-iframe'), 5000);
+      };
+
+      // Set up iframe event handlers
+      iframe.onload = () => {
+        setTimeout(handleSuccess, 2000);
+      };
+
+      iframe.onerror = () => {
+        handleError('Network error occurred');
+      };
+
+      // Set timeout as backup
+      submissionTimeout = setTimeout(() => {
+        handleError('Submission timeout');
+      }, 15000);
 
       // Submit form
       document.body.appendChild(form);
@@ -1898,6 +1956,95 @@
       }
       
       return rows;
+    }
+
+    /**
+     * Validates submission data before sending to server
+     * @param {Object} data - The submission data object
+     * @param {string} data.id - Staff ID
+     * @param {string} data.selfie - Base64 encoded selfie image
+     * @param {Object} data.location - Location data object
+     * @param {string} data.branch - Selected branch name
+     * @returns {boolean} True if validation passes
+     * @throws {Error} If validation fails
+     */
+    function validateSubmissionData(data) {
+      const errors = [];
+      
+      // Validate Staff ID
+      if (!data.id || data.id.trim().length === 0) {
+        errors.push('Staff ID is required');
+      } else if (data.id.length > 50) {
+        errors.push('Staff ID is too long (max 50 characters)');
+      }
+      
+      // Validate Selfie
+      if (!data.selfie) {
+        errors.push('Selfie image is required');
+      } else if (!data.selfie.startsWith('data:image/')) {
+        errors.push('Invalid selfie image format');
+      } else if (data.selfie.length > 5000000) { // 5MB limit
+        errors.push('Selfie image is too large (max 5MB)');
+      }
+      
+      // Validate Branch
+      if (!data.branch || data.branch.trim().length === 0) {
+        errors.push('Branch selection is required');
+      }
+      
+      // Validate Location (optional but warn if missing)
+      if (!data.location) {
+        console.warn('Location data is missing');
+      } else if (data.location.latitude === 0 && data.location.longitude === 0) {
+        console.warn('Location coordinates are invalid');
+      }
+      
+      if (errors.length > 0) {
+        throw new Error(errors.join('; '));
+      }
+      
+      return true;
+    }
+
+    /**
+     * Sanitizes user input to prevent XSS attacks
+     * @param {*} input - The input to sanitize
+     * @returns {*} Sanitized input
+     */
+    function sanitizeInput(input) {
+      if (typeof input !== 'string') return input;
+      return input.trim().replace(/[<>]/g, ''); // Basic XSS prevention
+    }
+
+    /**
+     * Creates an iframe element with proper management
+     * @param {string} id - The iframe ID
+     * @param {string} name - The iframe name
+     * @returns {HTMLIFrameElement} The created iframe
+     */
+    function createIframe(id, name) {
+      let iframe = document.getElementById(id);
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = id;
+        iframe.name = name;
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+      return iframe;
+    }
+
+    function cleanupIframe(iframeId) {
+      const iframe = document.getElementById(iframeId);
+      if (iframe && iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+    }
+
+    function cleanupForm(form) {
+      if (form && form.parentNode) {
+        form.parentNode.removeChild(form);
+      }
     }
 
     // Initialize when page loads
