@@ -392,6 +392,7 @@
     let currentStream = null;
     let retryCount = 0;
     const maxRetries = 3;
+    let userLocation = null; // Add location state
     
     // Stats
     let scanCount = 0;
@@ -421,9 +422,55 @@
 
     // Initialize the app
     function initApp() {
+      getLocation(); // Get location first
       initializeQRScanner();
       setupEventListeners();
       updateStats();
+    }
+
+    // Get user location
+    function getLocation() {
+      if (navigator.geolocation) {
+        showMessage('Getting your location...', 'info');
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            userLocation = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+              timestamp: new Date().toISOString()
+            };
+            showMessage('Location captured successfully!', 'success');
+            console.log('Location captured:', userLocation);
+          },
+          (error) => {
+            console.error('Location error:', error);
+            userLocation = {
+              latitude: 0,
+              longitude: 0,
+              accuracy: 0,
+              timestamp: new Date().toISOString(),
+              error: error.message
+            };
+            showMessage('Location access denied. Continuing without location.', 'error');
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+          }
+        );
+      } else {
+        showMessage('Geolocation not supported by this browser.', 'error');
+        userLocation = {
+          latitude: 0,
+          longitude: 0,
+          accuracy: 0,
+          timestamp: new Date().toISOString(),
+          error: 'Geolocation not supported'
+        };
+      }
     }
 
     function initializeQRScanner() {
@@ -557,10 +604,17 @@
       elements.submitBtn.disabled = true;
       showMessage('Submitting attendance...', 'info');
 
+      // Prepare submission data with location
+      const submissionData = {
+        id: scannedId,
+        selfie: selfieData,
+        location: userLocation
+      };
+
       fetch(WEB_APP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: scannedId, selfie: selfieData })
+        body: JSON.stringify(submissionData)
       })
       .then(response => {
         if (!response.ok) {
