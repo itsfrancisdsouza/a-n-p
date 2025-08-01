@@ -184,7 +184,7 @@ function doPost(e) {
       selfieUrl = file.getUrl();
     }
 
-    // Format location data
+    // Format location data with enhanced iOS support
     let locationString = '';
     let googleMapLink = '';
     let branch = '';
@@ -195,6 +195,11 @@ function doPost(e) {
         locationString = `${locationData.latitude}, ${locationData.longitude}`;
         if (locationData.accuracy) {
           locationString += ` (±${Math.round(locationData.accuracy)}m)`;
+        }
+        
+        // Add timestamp if available (useful for iOS debugging)
+        if (locationData.timestamp) {
+          locationString += ` [${locationData.timestamp}]`;
         }
         
         // Generate Google Map Link
@@ -210,7 +215,12 @@ function doPost(e) {
           distanceValidation = 'Unknown';
         }
       } else {
-        locationString = 'Location unavailable';
+        // Handle iOS-specific location errors
+        if (locationData.error) {
+          locationString = `Location Error: ${locationData.error}`;
+        } else {
+          locationString = 'Location unavailable';
+        }
         googleMapLink = 'N/A';
         branch = 'Unknown';
         distanceValidation = 'Invalid';
@@ -236,7 +246,7 @@ function doPost(e) {
       distanceValidation
     ]);
 
-    // Success response
+    // Success response with enhanced location info
     return ContentService
       .createTextOutput(JSON.stringify({
         status: 'success',
@@ -247,7 +257,13 @@ function doPost(e) {
         location: locationString,
         googleMapLink: googleMapLink,
         branch: branch,
-        distanceValidation: distanceValidation
+        distanceValidation: distanceValidation,
+        locationDetails: {
+          hasLocation: locationData && locationData.latitude !== 0 && locationData.longitude !== 0,
+          accuracy: locationData ? locationData.accuracy : null,
+          timestamp: locationData ? locationData.timestamp : null,
+          error: locationData ? locationData.error : null
+        }
       }))
       .setMimeType(ContentService.MimeType.JSON);
 
