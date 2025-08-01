@@ -1548,152 +1548,141 @@
         branch: elements.branchSelect.value // Add selected branch
       };
 
-      // iOS-friendly submission using fetch
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      
-      console.log('Submitting attendance:', {
-        isIOS: isIOS,
-        hasLocation: !!userLocation,
-        hasSelfie: !!selfieData,
-        branch: elements.branchSelect.value
-      });
-      
-      if (isIOS) {
-        // For iOS, use a more reliable submission method
-        showMessage('Submitting via iOS-optimized method...', 'info');
-        submitViaFormData(submissionData);
-      } else {
-        // For other devices, use fetch with JSON
-        submitViaFetch(submissionData);
-      }
-    }
-
-    function submitViaFetch(submissionData) {
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submissionData)
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        handleSubmissionSuccess(data);
-      })
-      .catch(error => {
-        handleSubmissionError(error);
-      });
-    }
-
-    function submitViaFormData(submissionData) {
-      // Create FormData for iOS compatibility
-      const formData = new FormData();
-      formData.append('data', JSON.stringify(submissionData));
-
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        body: formData
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.text();
-      })
-      .then(data => {
+      // Use fetch API for cross-platform compatibility
+      const submitData = async () => {
         try {
-          const jsonData = JSON.parse(data);
-          handleSubmissionSuccess(jsonData);
-        } catch (e) {
-          // If response is not JSON, assume success
-          handleSubmissionSuccess({ status: 'success' });
-        }
-      })
-      .catch(error => {
-        console.log('Fetch failed, trying fallback method for iOS:', error);
-        // Fallback to traditional form submission for iOS
-        submitViaFormFallback(submissionData);
-      });
-    }
-
-    function submitViaFormFallback(submissionData) {
-      // Traditional form submission as fallback for iOS
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = WEB_APP_URL;
-      form.target = 'hidden-iframe';
-      form.style.display = 'none';
-
-      // Add data as hidden inputs
-      const dataInput = document.createElement('input');
-      dataInput.type = 'hidden';
-      dataInput.name = 'data';
-      dataInput.value = JSON.stringify(submissionData);
-      form.appendChild(dataInput);
-
-      // Create hidden iframe to receive response
-      let iframe = document.getElementById('hidden-iframe');
-      if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'hidden-iframe';
-        iframe.name = 'hidden-iframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-      }
-
-      // Handle iframe load event
-      iframe.onload = function() {
-        setTimeout(() => {
-          try {
-            handleSubmissionSuccess({ status: 'success' });
-          } catch (error) {
-            handleSubmissionError(error);
-          }
+          const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(submissionData)
+          });
           
-          // Clean up
-          if (form.parentNode) {
-            form.parentNode.removeChild(form);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
-        }, 2000); // Reduced timeout for iOS
+          return await response.text();
+        } catch (fetchError) {
+          console.log('Fetch failed, trying fallback method:', fetchError);
+          // Fallback to form submission for older browsers/devices
+          return new Promise((resolve, reject) => {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = WEB_APP_URL;
+            form.target = 'hidden-iframe';
+            form.style.display = 'none';
+
+            const dataInput = document.createElement('input');
+            dataInput.type = 'hidden';
+            dataInput.name = 'data';
+            dataInput.value = JSON.stringify(submissionData);
+            form.appendChild(dataInput);
+
+            let iframe = document.getElementById('hidden-iframe');
+            if (!iframe) {
+              iframe = document.createElement('iframe');
+              iframe.id = 'hidden-iframe';
+              iframe.name = 'hidden-iframe';
+              iframe.style.display = 'none';
+              document.body.appendChild(iframe);
+            }
+
+            iframe.onload = () => {
+              setTimeout(() => {
+                resolve('success');
+                if (form.parentNode) {
+                  form.parentNode.removeChild(form);
+                }
+              }, 3000);
+            };
+
+            document.body.appendChild(form);
+            form.submit();
+          });
+        }
       };
 
-      // Submit the form
-      document.body.appendChild(form);
-      form.submit();
-    }
-
-    function handleSubmissionSuccess(data) {
-      elements.submitBtn.classList.remove('loading');
-      successCount++;
-      updateStats();
-      showMessage(`✅ Attendance recorded successfully!`, 'success');
-      elements.submitStep.classList.remove('active');
-      elements.submitStep.classList.add('completed');
-      
-      // Update submit step indicator to completed
-      const submitIndicator = elements.submitStep.querySelector('.status-indicator');
-      submitIndicator.classList.remove('active');
-      submitIndicator.classList.add('completed');
-      
-      // Auto-reset after 3 seconds
-      setTimeout(() => {
-        resetApp();
-      }, 3000);
-    }
-
-    function handleSubmissionError(error) {
-      errorCount++;
-      updateStats();
-      elements.submitBtn.classList.remove('loading');
-      elements.submitBtn.disabled = false;
-      
-      showMessage(`❌ Submission failed: ${error.message}`, 'error');
-      showRetrySection();
+                  submitData()
+        .then(data => {
+          // Handle both fetch response and fallback response
+          if (data === 'success') {
+            // Fallback method was used
+            elements.submitBtn.classList.remove('loading');
+            successCount++;
+            updateStats();
+            showMessage(`✅ Attendance recorded successfully!`, 'success');
+            elements.submitStep.classList.remove('active');
+            elements.submitStep.classList.add('completed');
+            
+            // Update submit step indicator to completed
+            const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+            submitIndicator.classList.remove('active');
+            submitIndicator.classList.add('completed');
+            
+            // Auto-reset after 3 seconds
+            setTimeout(() => {
+              resetApp();
+            }, 3000);
+            return;
+          }
+          
+          // Handle fetch response
+          try {
+            // Try to parse JSON response
+            const result = JSON.parse(data);
+          
+          if (result.status === 'success') {
+            elements.submitBtn.classList.remove('loading');
+            successCount++;
+            updateStats();
+            showMessage(`✅ Attendance recorded successfully! Log ID: ${result.logId}`, 'success');
+            elements.submitStep.classList.remove('active');
+            elements.submitStep.classList.add('completed');
+            
+            // Update submit step indicator to completed
+            const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+            submitIndicator.classList.remove('active');
+            submitIndicator.classList.add('completed');
+            
+            // Auto-reset after 3 seconds
+            setTimeout(() => {
+              resetApp();
+            }, 3000);
+          } else {
+            throw new Error(result.message || 'Submission failed');
+          }
+        } catch (parseError) {
+          // If JSON parsing fails, assume success (Google Apps Script might return plain text)
+          console.log('Response data:', data);
+          elements.submitBtn.classList.remove('loading');
+          successCount++;
+          updateStats();
+          showMessage(`✅ Attendance recorded successfully!`, 'success');
+          elements.submitStep.classList.remove('active');
+          elements.submitStep.classList.add('completed');
+          
+          // Update submit step indicator to completed
+          const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+          submitIndicator.classList.remove('active');
+          submitIndicator.classList.add('completed');
+          
+          // Auto-reset after 3 seconds
+          setTimeout(() => {
+            resetApp();
+          }, 3000);
+        }
+      })
+      .catch(error => {
+        console.error('Submission error:', error);
+        errorCount++;
+        updateStats();
+        elements.submitBtn.classList.remove('loading');
+        elements.submitBtn.disabled = false;
+        
+        showMessage(`❌ Submission failed: ${error.message}`, 'error');
+        showRetrySection();
+      });
     }
 
     function retrySubmission() {
