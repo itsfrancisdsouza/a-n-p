@@ -216,6 +216,7 @@
       height: clamp(200px, 50vw, 250px);
       object-fit: cover;
       box-sizing: border-box;
+      aspect-ratio: 4/3;
     }
 
     .preview-container {
@@ -234,6 +235,7 @@
       height: clamp(200px, 50vw, 250px);
       object-fit: cover;
       box-sizing: border-box;
+      aspect-ratio: 4/3;
     }
 
     .btn {
@@ -623,7 +625,8 @@
       }
 
       #selfieCam, #canvas, #preview {
-        height: 200px;
+        height: 240px;
+        aspect-ratio: 4/3;
       }
 
       .location-info {
@@ -664,6 +667,7 @@
       #selfieCam, #canvas, #preview {
         max-width: 400px;
         height: 300px;
+        aspect-ratio: 4/3;
       }
     }
 
@@ -959,8 +963,9 @@
       navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: 'user',
-          width: { ideal: 640 },
-          height: { ideal: 480 }
+          width: { ideal: 640, min: 320, max: 1280 },
+          height: { ideal: 480, min: 240, max: 960 },
+          aspectRatio: { ideal: 4/3 }
         } 
       })
       .then(stream => {
@@ -985,10 +990,32 @@
     }
 
     function captureSelfie() {
-      const ctx = elements.canvas.getContext('2d');
-      ctx.drawImage(elements.selfieCam, 0, 0, elements.canvas.width, elements.canvas.height);
+      const video = elements.selfieCam;
+      const canvas = elements.canvas;
+      const ctx = canvas.getContext('2d');
       
-      selfieData = elements.canvas.toDataURL('image/jpeg', 0.8);
+      // Set canvas size to match video aspect ratio
+      const aspectRatio = 4/3;
+      const maxWidth = 640;
+      const maxHeight = 480;
+      
+      let canvasWidth = maxWidth;
+      let canvasHeight = maxHeight;
+      
+      // Maintain aspect ratio
+      if (canvasWidth / canvasHeight > aspectRatio) {
+        canvasWidth = canvasHeight * aspectRatio;
+      } else {
+        canvasHeight = canvasWidth / aspectRatio;
+      }
+      
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      
+      // Draw video frame to canvas maintaining aspect ratio
+      ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+      
+      selfieData = canvas.toDataURL('image/jpeg', 0.8);
       
       // Show preview
       elements.preview.src = selfieData;
