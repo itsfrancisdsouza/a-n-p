@@ -1,176 +1,683 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>QR Attendance with Selfie</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance System - QR & Selfie</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
-    body {
-      background-color: #F5F5F5;
-      color: #222222;
-      font-family: Arial, sans-serif;
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
-    h2 {
-      color: #ECA02D;
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
       text-align: center;
-      margin-top: 32px;
     }
-    #reader, #selfieCam, #canvas, #submitBtn {
-      display: none;
+
+    .header {
+      margin-bottom: 30px;
     }
-    #reader.active, #selfieCam.active, #canvas.active, #submitBtn.active {
-      display: block;
-      margin: 18px auto;
+
+    .header h1 {
+      color: #4a5568;
+      font-size: 2.2em;
+      font-weight: 700;
+      margin-bottom: 10px;
     }
+
+    .header p {
+      color: #718096;
+      font-size: 1.1em;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 10px;
+      background: #e2e8f0;
+    }
+
+    .status-indicator.active {
+      background: #48bb78;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    .step-container {
+      margin: 20px 0;
+      padding: 20px;
+      border-radius: 15px;
+      background: #f7fafc;
+      border: 2px solid #e2e8f0;
+      transition: all 0.3s ease;
+    }
+
+    .step-container.active {
+      border-color: #4299e1;
+      background: #ebf8ff;
+    }
+
+    .step-container.completed {
+      border-color: #48bb78;
+      background: #f0fff4;
+    }
+
+    .step-title {
+      font-size: 1.2em;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-title i {
+      margin-right: 10px;
+      font-size: 1.1em;
+    }
+
     #reader {
       background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(34,34,34,0.06);
-      padding: 14px;
-      width: 300px;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin: 0 auto;
+      max-width: 350px;
     }
-    #message {
-      text-align: center;
-      color: #222222;
-      margin-top: 18px;
-      font-size: 1.08em;
-    }
-    #captureBtn, #submitBtn {
-      margin: 18px auto 0 auto;
-      background-color: #ECA02D;
-      color: #222222;
-      border: none;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 13px 34px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.2s;
-      display: block;
-    }
-    #captureBtn:disabled, #submitBtn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    #captureBtn:hover:not(:disabled), #submitBtn:hover:not(:disabled) {
-      background-color: #222222;
-      color: #ECA02D;
-      border: 1px solid #ECA02D;
-    }
+
     #selfieCam, #canvas {
-      border: 3px solid #ECA02D;
-      border-radius: 10px;
+      border: 3px solid #4299e1;
+      border-radius: 15px;
       background: #fff;
-      width: 300px;
-      height: 225px;
+      width: 100%;
+      max-width: 350px;
+      height: 250px;
+      object-fit: cover;
+    }
+
+    .preview-container {
+      position: relative;
+      display: inline-block;
+      margin: 10px 0;
+    }
+
+    #preview {
+      border: 3px solid #48bb78;
+      border-radius: 15px;
+      max-width: 350px;
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+      color: white;
+      border: none;
+      font-weight: 600;
+      font-size: 16px;
+      padding: 15px 30px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 10px 5px;
+      min-width: 140px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(66, 153, 225, 0.3);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn.secondary {
+      background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+    }
+
+    .btn.success {
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    }
+
+    .btn.danger {
+      background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    }
+
+    .loading {
+      position: relative;
+      color: transparent;
+    }
+
+    .loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      font-weight: 500;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .message-success {
+      background: #f0fff4;
+      color: #22543d;
+      border: 1px solid #9ae6b4;
+    }
+
+    .message-error {
+      background: #fed7d7;
+      color: #742a2a;
+      border: 1px solid #feb2b2;
+    }
+
+    .message-info {
+      background: #ebf8ff;
+      color: #2a4365;
+      border: 1px solid #90cdf4;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .retry-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 10px;
+      color: #856404;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #4299e1;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      color: #718096;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+        margin: 10px;
+      }
+      
+      .header h1 {
+        font-size: 1.8em;
+      }
+      
+      .btn {
+        padding: 12px 20px;
+        font-size: 14px;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Scan QR Code and Take Selfie</h2>
-  <div id="reader" class="active"></div>
-  <video id="selfieCam" width="300" height="225" autoplay muted></video>
-  <button id="captureBtn" disabled>Take Selfie</button>
-  <canvas id="canvas" width="300" height="225"></canvas>
-  <button id="submitBtn" disabled>Submit Attendance</button>
-  <div id="message"></div>
+  <div class="container">
+    <div class="header">
+      <h1><i class="fas fa-qrcode"></i> Attendance System</h1>
+      <p>Scan QR Code & Capture Selfie for Attendance</p>
+    </div>
+
+    <!-- Step 1: QR Scanner -->
+    <div id="qrStep" class="step-container active">
+      <div class="step-title">
+        <i class="fas fa-qrcode"></i>
+        <span class="status-indicator active"></span>
+        Step 1: Scan QR Code
+      </div>
+      <div id="reader"></div>
+      <button id="retryQrBtn" class="btn secondary hidden">
+        <i class="fas fa-redo"></i> Retry QR Scan
+      </button>
+    </div>
+
+    <!-- Step 2: Selfie Capture -->
+    <div id="selfieStep" class="step-container">
+      <div class="step-title">
+        <i class="fas fa-camera"></i>
+        <span class="status-indicator"></span>
+        Step 2: Take Selfie
+      </div>
+      <video id="selfieCam" autoplay muted></video>
+      <canvas id="canvas" class="hidden"></canvas>
+      <div class="preview-container hidden" id="previewContainer">
+        <img id="preview" alt="Selfie Preview">
+      </div>
+      <button id="captureBtn" class="btn" disabled>
+        <i class="fas fa-camera"></i> Take Selfie
+      </button>
+      <button id="retakeBtn" class="btn secondary hidden">
+        <i class="fas fa-redo"></i> Retake
+      </button>
+    </div>
+
+    <!-- Step 3: Submit -->
+    <div id="submitStep" class="step-container">
+      <div class="step-title">
+        <i class="fas fa-paper-plane"></i>
+        <span class="status-indicator"></span>
+        Step 3: Submit Attendance
+      </div>
+      <button id="submitBtn" class="btn success" disabled>
+        <i class="fas fa-check"></i> Submit Attendance
+      </button>
+      <button id="resetBtn" class="btn secondary">
+        <i class="fas fa-refresh"></i> Start Over
+      </button>
+    </div>
+
+    <!-- Message Display -->
+    <div id="message" class="message-info">
+      <i class="fas fa-info-circle"></i> Ready to scan QR code...
+    </div>
+
+    <!-- Retry Section -->
+    <div id="retrySection" class="retry-section hidden">
+      <h4><i class="fas fa-exclamation-triangle"></i> Submission Failed</h4>
+      <p>Would you like to retry?</p>
+      <button id="retrySubmitBtn" class="btn">
+        <i class="fas fa-redo"></i> Retry
+      </button>
+      <button id="cancelRetryBtn" class="btn secondary">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-value" id="scanCount">0</div>
+        <div class="stat-label">Scans</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="successCount">0</div>
+        <div class="stat-label">Success</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="errorCount">0</div>
+        <div class="stat-label">Errors</div>
+      </div>
+    </div>
+  </div>
 
   <script>
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxFajMmSMwacu7jXCF__LH-sy9IkFkVf-QSF47bALVmzxdSFCtN6B7F3UnNvXfKnYqzqQ/exec';
+    
+    // State management
     let scannedId = '';
     let selfieData = '';
-    const readerDiv = document.getElementById('reader');
-    const selfieCam = document.getElementById('selfieCam');
-    const captureBtn = document.getElementById('captureBtn');
-    const submitBtn = document.getElementById('submitBtn');
-    const canvas = document.getElementById('canvas');
-    const messageDiv = document.getElementById('message');
+    let qrReader = null;
+    let currentStream = null;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    // Stats
+    let scanCount = 0;
+    let successCount = 0;
+    let errorCount = 0;
 
-    // Only enable selfie after QR scan
-    captureBtn.disabled = true;
-    submitBtn.disabled = true;
-
-    // Initialize QR Reader
-    const qrReader = new Html5Qrcode("reader");
-    Html5Qrcode.getCameras()
-      .then(cameras => {
-        if (cameras.length) {
-          qrReader.start(
-            cameras[0].id,
-            { fps: 10, qrbox: 250 },
-            (decoded) => {
-              scannedId = decoded;
-              qrReader.stop();
-              readerDiv.classList.remove("active");
-              showMessage(`Scanned ID: ${scannedId}. Now take a selfie.`);
-              enableSelfie();
-            }
-          );
-        } else {
-          showMessage('No camera detected.');
-        }
-      })
-      .catch(() => showMessage('Camera access error.'));
-
-    function enableSelfie() {
-      selfieCam.classList.add("active");
-      captureBtn.classList.add("active");
-      captureBtn.disabled = false;
-
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          selfieCam.srcObject = stream;
-        })
-        .catch(() => showMessage('Could not access camera for selfie.'));
-    }
-
-    captureBtn.onclick = () => {
-      // Take selfie, then enable the "Submit" button
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(selfieCam, 0, 0, canvas.width, canvas.height);
-      // Freeze image preview
-      canvas.classList.add("active");
-      selfieData = canvas.toDataURL('image/png');
-      // Stop video stream
-      if (selfieCam.srcObject) {
-        selfieCam.srcObject.getTracks().forEach(track => track.stop());
-      }
-      // Hide video/camera
-      selfieCam.classList.remove("active");
-      captureBtn.disabled = true;
-      submitBtn.classList.add("active");
-      submitBtn.disabled = false;
-      showMessage('Selfie taken. Now submit for attendance.');
+    // DOM elements
+    const elements = {
+      qrStep: document.getElementById('qrStep'),
+      selfieStep: document.getElementById('selfieStep'),
+      submitStep: document.getElementById('submitStep'),
+      reader: document.getElementById('reader'),
+      selfieCam: document.getElementById('selfieCam'),
+      canvas: document.getElementById('canvas'),
+      preview: document.getElementById('preview'),
+      previewContainer: document.getElementById('previewContainer'),
+      captureBtn: document.getElementById('captureBtn'),
+      retakeBtn: document.getElementById('retakeBtn'),
+      submitBtn: document.getElementById('submitBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      retryQrBtn: document.getElementById('retryQrBtn'),
+      retrySection: document.getElementById('retrySection'),
+      retrySubmitBtn: document.getElementById('retrySubmitBtn'),
+      cancelRetryBtn: document.getElementById('cancelRetryBtn'),
+      message: document.getElementById('message')
     };
 
-    submitBtn.onclick = () => {
+    // Initialize the app
+    function initApp() {
+      initializeQRScanner();
+      setupEventListeners();
+      updateStats();
+    }
+
+    function initializeQRScanner() {
+      qrReader = new Html5Qrcode("reader");
+      
+      Html5Qrcode.getCameras()
+        .then(cameras => {
+          if (cameras.length) {
+            // Try to use back camera if available
+            const backCamera = cameras.find(cam => 
+              cam.label.toLowerCase().includes('back') || 
+              cam.label.toLowerCase().includes('rear')
+            );
+            const cameraId = backCamera ? backCamera.id : cameras[0].id;
+            
+            qrReader.start(
+              cameraId,
+              { 
+                fps: 10, 
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+              },
+              onQRCodeScanned,
+              onQRScanError
+            );
+          } else {
+            showMessage('No camera detected. Please check camera permissions.', 'error');
+          }
+        })
+        .catch(error => {
+          showMessage('Camera access error: ' + error.message, 'error');
+          elements.retryQrBtn.classList.remove('hidden');
+        });
+    }
+
+    function onQRCodeScanned(decodedText) {
+      scannedId = decodedText;
+      scanCount++;
+      updateStats();
+      
+      qrReader.stop();
+      elements.qrStep.classList.remove('active');
+      elements.qrStep.classList.add('completed');
+      
+      showMessage(`QR Code scanned successfully! ID: ${scannedId}`, 'success');
+      setTimeout(() => {
+        enableSelfieCapture();
+      }, 1000);
+    }
+
+    function onQRScanError(error) {
+      console.log('QR Scan error:', error);
+    }
+
+    function enableSelfieCapture() {
+      elements.selfieStep.classList.add('active');
+      elements.captureBtn.disabled = false;
+      
+      navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        } 
+      })
+      .then(stream => {
+        currentStream = stream;
+        elements.selfieCam.srcObject = stream;
+        showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
+      })
+      .catch(error => {
+        showMessage('Could not access camera: ' + error.message, 'error');
+      });
+    }
+
+    function setupEventListeners() {
+      elements.captureBtn.addEventListener('click', captureSelfie);
+      elements.retakeBtn.addEventListener('click', retakeSelfie);
+      elements.submitBtn.addEventListener('click', submitAttendance);
+      elements.resetBtn.addEventListener('click', resetApp);
+      elements.retryQrBtn.addEventListener('click', retryQRScan);
+      elements.retrySubmitBtn.addEventListener('click', retrySubmission);
+      elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
+    }
+
+    function captureSelfie() {
+      const ctx = elements.canvas.getContext('2d');
+      ctx.drawImage(elements.selfieCam, 0, 0, elements.canvas.width, elements.canvas.height);
+      
+      selfieData = elements.canvas.toDataURL('image/jpeg', 0.8);
+      
+      // Show preview
+      elements.preview.src = selfieData;
+      elements.previewContainer.classList.remove('hidden');
+      elements.selfieCam.classList.add('hidden');
+      
+      // Stop video stream
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      
+      elements.captureBtn.classList.add('hidden');
+      elements.retakeBtn.classList.remove('hidden');
+      elements.submitBtn.disabled = false;
+      
+      elements.selfieStep.classList.remove('active');
+      elements.selfieStep.classList.add('completed');
+      elements.submitStep.classList.add('active');
+      
+      showMessage('Selfie captured! Click "Submit Attendance" to continue.', 'success');
+    }
+
+    function retakeSelfie() {
+      elements.previewContainer.classList.add('hidden');
+      elements.selfieCam.classList.remove('hidden');
+      elements.captureBtn.classList.remove('hidden');
+      elements.retakeBtn.classList.add('hidden');
+      elements.submitBtn.disabled = true;
+      
+      enableSelfieCapture();
+    }
+
+    function submitAttendance() {
       if (!scannedId || !selfieData) {
-        showMessage('Scan QR and take selfie first.');
+        showMessage('Please scan QR code and take selfie first.', 'error');
         return;
       }
-      submitBtn.disabled = true;
-      showMessage('Submitting...');
+
+      elements.submitBtn.classList.add('loading');
+      elements.submitBtn.disabled = true;
+      showMessage('Submitting attendance...', 'info');
+
       fetch(WEB_APP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: scannedId, selfie: selfieData })
       })
-      .then(res => res.json())
-      .then(data => {
-        showMessage(data.status === 'success'
-          ? `Attendance recorded! Log ID: ${data.logId}`
-          : `Error: ${data.message}`);
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
       })
-      .catch(() => {
-        showMessage('Network error');
+      .then(data => {
+        elements.submitBtn.classList.remove('loading');
+        
+        if (data.status === 'success') {
+          successCount++;
+          updateStats();
+          showMessage(`✅ Attendance recorded successfully! Log ID: ${data.logId}`, 'success');
+          elements.submitStep.classList.remove('active');
+          elements.submitStep.classList.add('completed');
+          
+          // Auto-reset after 3 seconds
+          setTimeout(() => {
+            resetApp();
+          }, 3000);
+        } else {
+          throw new Error(data.message || 'Unknown error');
+        }
+      })
+      .catch(error => {
+        errorCount++;
+        updateStats();
+        elements.submitBtn.classList.remove('loading');
+        elements.submitBtn.disabled = false;
+        
+        showMessage(`❌ Submission failed: ${error.message}`, 'error');
+        showRetrySection();
       });
-    };
-
-    function showMessage(msg) {
-      messageDiv.innerText = msg;
     }
+
+    function retrySubmission() {
+      retryCount++;
+      if (retryCount <= maxRetries) {
+        hideRetrySection();
+        submitAttendance();
+      } else {
+        showMessage('Maximum retry attempts reached. Please start over.', 'error');
+        hideRetrySection();
+        resetApp();
+      }
+    }
+
+    function showRetrySection() {
+      elements.retrySection.classList.remove('hidden');
+    }
+
+    function hideRetrySection() {
+      elements.retrySection.classList.add('hidden');
+    }
+
+    function retryQRScan() {
+      elements.retryQrBtn.classList.add('hidden');
+      initializeQRScanner();
+    }
+
+    function resetApp() {
+      // Reset state
+      scannedId = '';
+      selfieData = '';
+      retryCount = 0;
+      
+      // Reset UI
+      elements.qrStep.classList.remove('completed');
+      elements.qrStep.classList.add('active');
+      elements.selfieStep.classList.remove('active', 'completed');
+      elements.submitStep.classList.remove('active', 'completed');
+      
+      // Hide elements
+      elements.previewContainer.classList.add('hidden');
+      elements.selfieCam.classList.remove('hidden');
+      elements.captureBtn.classList.remove('hidden');
+      elements.retakeBtn.classList.add('hidden');
+      elements.retryQrBtn.classList.add('hidden');
+      elements.retrySection.classList.add('hidden');
+      
+      // Reset buttons
+      elements.captureBtn.disabled = true;
+      elements.submitBtn.disabled = true;
+      elements.submitBtn.classList.remove('loading');
+      
+      // Stop any active streams
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      
+      // Reinitialize QR scanner
+      if (qrReader) {
+        qrReader.stop();
+      }
+      setTimeout(() => {
+        initializeQRScanner();
+      }, 500);
+      
+      showMessage('Ready to scan QR code...', 'info');
+    }
+
+    function showMessage(message, type = 'info') {
+      elements.message.textContent = message;
+      elements.message.className = `message-${type}`;
+      elements.message.classList.add('fade-in');
+    }
+
+    function updateStats() {
+      document.getElementById('scanCount').textContent = scanCount;
+      document.getElementById('successCount').textContent = successCount;
+      document.getElementById('errorCount').textContent = errorCount;
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
 </html>
