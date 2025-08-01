@@ -638,25 +638,73 @@
       // Handle iframe load event
       iframe.onload = function() {
         try {
-          const responseText = iframe.contentDocument.body.textContent;
-          const data = JSON.parse(responseText);
-          
-          elements.submitBtn.classList.remove('loading');
-          
-          if (data.status === 'success') {
-            successCount++;
-            updateStats();
-            showMessage(`✅ Attendance recorded successfully! Log ID: ${data.logId}`, 'success');
-            elements.submitStep.classList.remove('active');
-            elements.submitStep.classList.add('completed');
+          // Wait a bit for the response to be available
+          setTimeout(() => {
+            try {
+              let responseText = '';
+              
+              // Try to get response from iframe content
+              if (iframe.contentDocument && iframe.contentDocument.body) {
+                responseText = iframe.contentDocument.body.textContent;
+              } else if (iframe.contentWindow && iframe.contentWindow.document) {
+                responseText = iframe.contentWindow.document.body.textContent;
+              } else {
+                // Fallback: try to get response from iframe src
+                responseText = iframe.contentWindow.location.href;
+              }
+              
+              // If response is empty or not JSON, throw error
+              if (!responseText || responseText.trim() === '') {
+                throw new Error('Empty response from server');
+              }
+              
+              // Try to parse JSON response
+              let data;
+              try {
+                data = JSON.parse(responseText);
+              } catch (parseError) {
+                // If it's not JSON, check if it contains success/error indicators
+                if (responseText.includes('success')) {
+                  data = { status: 'success', message: 'Attendance recorded successfully' };
+                } else if (responseText.includes('error')) {
+                  data = { status: 'error', message: responseText };
+                } else {
+                  throw new Error('Invalid response format: ' + responseText);
+                }
+              }
+              
+              elements.submitBtn.classList.remove('loading');
+              
+              if (data.status === 'success') {
+                successCount++;
+                updateStats();
+                showMessage(`✅ Attendance recorded successfully! Log ID: ${data.logId || 'N/A'}`, 'success');
+                elements.submitStep.classList.remove('active');
+                elements.submitStep.classList.add('completed');
+                
+                // Auto-reset after 3 seconds
+                setTimeout(() => {
+                  resetApp();
+                }, 3000);
+              } else {
+                throw new Error(data.message || 'Unknown error');
+              }
+            } catch (error) {
+              errorCount++;
+              updateStats();
+              elements.submitBtn.classList.remove('loading');
+              elements.submitBtn.disabled = false;
+              
+              showMessage(`❌ Submission failed: ${error.message}`, 'error');
+              showRetrySection();
+            }
             
-            // Auto-reset after 3 seconds
-            setTimeout(() => {
-              resetApp();
-            }, 3000);
-          } else {
-            throw new Error(data.message || 'Unknown error');
-          }
+            // Clean up
+            if (form.parentNode) {
+              form.parentNode.removeChild(form);
+            }
+          }, 1000); // Wait 1 second for response
+          
         } catch (error) {
           errorCount++;
           updateStats();
@@ -665,10 +713,12 @@
           
           showMessage(`❌ Submission failed: ${error.message}`, 'error');
           showRetrySection();
+          
+          // Clean up
+          if (form.parentNode) {
+            form.parentNode.removeChild(form);
+          }
         }
-        
-        // Clean up
-        document.body.removeChild(form);
       };
 
       // Submit the form
