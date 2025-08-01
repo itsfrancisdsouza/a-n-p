@@ -2,10 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="format-detection" content="telephone=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attendance System - QR & Selfie</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -991,74 +988,6 @@
         outline-offset: 2px;
       }
     }
-
-    /* iOS-specific improvements */
-    @supports (-webkit-touch-callout: none) {
-      /* iOS Safari specific styles */
-      body {
-        -webkit-text-size-adjust: 100%;
-        -webkit-font-smoothing: antialiased;
-      }
-
-      .btn {
-        -webkit-appearance: none;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -webkit-tap-highlight-color: rgba(236, 160, 45, 0.3);
-        touch-action: manipulation;
-        cursor: pointer;
-      }
-
-      .btn:active {
-        -webkit-transform: scale(0.95);
-        transform: scale(0.95);
-        transition: all 0.1s ease;
-      }
-
-      /* iOS video fixes */
-      #selfieCam {
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-      }
-
-      /* iOS input fixes */
-      .branch-dropdown {
-        -webkit-appearance: none;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        touch-action: manipulation;
-      }
-
-      /* iOS scrolling improvements */
-      .container {
-        -webkit-overflow-scrolling: touch;
-        overflow-scrolling: touch;
-      }
-
-      /* iOS focus improvements */
-      .btn:focus {
-        outline: none;
-        -webkit-box-shadow: 0 0 0 3px rgba(236, 160, 45, 0.3);
-        box-shadow: 0 0 0 3px rgba(236, 160, 45, 0.3);
-      }
-
-      /* iOS camera container fixes */
-      #reader {
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-      }
-
-      #reader video {
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-      }
-    }
   </style>
 </head>
 <body>
@@ -1088,7 +1017,7 @@
         <span class="status-indicator"></span>
         Step 2: Take Selfie
       </div>
-      <video id="selfieCam" autoplay muted></video>
+      <video id="selfieCam" autoplay muted playsinline webkit-playsinline></video>
       <canvas id="canvas" class="hidden"></canvas>
       <div class="preview-container hidden" id="previewContainer">
         <img id="preview" alt="Selfie Preview">
@@ -1219,99 +1148,17 @@
 
     // Initialize the app
     function initApp() {
-      // iOS-specific initialization
-      if (isIOS()) {
-        // Add iOS-specific meta tags and viewport settings
-        addIOSMetaTags();
-        // Initialize with iOS-specific settings
-        initIOSApp();
-      } else {
-        // Standard initialization for other platforms
-        getLocation(); // Get location first
-        initializeQRScanner();
-        setupEventListeners();
-        updateStats();
-        fetchStaffDatabase(); // Fetch staff database
-      }
-    }
-
-    // iOS detection
-    function isIOS() {
-      return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    }
-
-    // Add iOS-specific meta tags
-    function addIOSMetaTags() {
-      const meta = document.createElement('meta');
-      meta.name = 'apple-mobile-web-app-capable';
-      meta.content = 'yes';
-      document.head.appendChild(meta);
-
-      const meta2 = document.createElement('meta');
-      meta2.name = 'apple-mobile-web-app-status-bar-style';
-      meta2.content = 'default';
-      document.head.appendChild(meta2);
-
-      const meta3 = document.createElement('meta');
-      meta3.name = 'format-detection';
-      meta3.content = 'telephone=no';
-      document.head.appendChild(meta3);
-    }
-
-    // iOS-specific initialization
-    function initIOSApp() {
-      // Request permissions first on iOS
-      requestIOSPermissions().then(() => {
-        getLocation(); // Get location first
-        initializeQRScanner();
-        setupEventListeners();
-        updateStats();
-        fetchStaffDatabase(); // Fetch staff database
-      }).catch(error => {
-        console.error('iOS permission error:', error);
-        showMessage('Please allow camera and location permissions to use this app.', 'error');
-        // Continue without permissions
-        getLocation();
-        initializeQRScanner();
-        setupEventListeners();
-        updateStats();
-        fetchStaffDatabase();
-      });
-    }
-
-    // Request iOS permissions
-    async function requestIOSPermissions() {
-      return new Promise((resolve, reject) => {
-        // Request camera permission
-        navigator.mediaDevices.getUserMedia({ video: true })
-          .then(stream => {
-            // Stop the stream immediately after getting permission
-            stream.getTracks().forEach(track => track.stop());
-            resolve();
-          })
-          .catch(error => {
-            console.error('Camera permission denied:', error);
-            reject(error);
-          });
-      });
+      getLocation(); // Get location first
+      initializeQRScanner();
+      setupEventListeners();
+      updateStats();
+      fetchStaffDatabase(); // Fetch staff database
     }
 
     // Get user location
     function getLocation() {
       if (navigator.geolocation) {
         showMessage('Getting your location...', 'info');
-        
-        // iOS-specific geolocation options
-        const geoOptions = isIOS() ? {
-          enableHighAccuracy: false, // Lower accuracy for iOS to avoid permission issues
-          timeout: 15000, // Longer timeout for iOS
-          maximumAge: 300000 // 5 minutes cache for iOS
-        } : {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
-        };
         
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -1337,7 +1184,11 @@
             showMessage('Location access denied. Continuing without location.', 'error');
             displayLocationInfo();
           },
-          geoOptions
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+          }
         );
       } else {
         showMessage('Geolocation not supported by this browser.', 'error');
@@ -1358,38 +1209,20 @@
       Html5Qrcode.getCameras()
         .then(cameras => {
           if (cameras.length) {
-            // iOS-specific camera selection
-            let cameraId;
-            if (isIOS()) {
-              // On iOS, prefer the first camera (usually back camera)
-              cameraId = cameras[0].id;
-            } else {
-              // Try to use back camera if available
-              const backCamera = cameras.find(cam => 
-                cam.label.toLowerCase().includes('back') || 
-                cam.label.toLowerCase().includes('rear')
-              );
-              cameraId = backCamera ? backCamera.id : cameras[0].id;
-            }
-            
-            // iOS-specific QR scanner settings
-            const config = isIOS() ? {
-              fps: 5, // Lower FPS for iOS
-              qrbox: { width: 200, height: 200 }, // Smaller QR box for iOS
-              aspectRatio: 1.0,
-              disableFlip: false, // Enable flip for iOS
-              experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
-              }
-            } : {
-              fps: 10, 
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0
-            };
+            // Try to use back camera if available
+            const backCamera = cameras.find(cam => 
+              cam.label.toLowerCase().includes('back') || 
+              cam.label.toLowerCase().includes('rear')
+            );
+            const cameraId = backCamera ? backCamera.id : cameras[0].id;
             
             qrReader.start(
               cameraId,
-              config,
+              { 
+                fps: 10, 
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+              },
               onQRCodeScanned,
               onQRScanError
             );
@@ -1398,7 +1231,6 @@
           }
         })
         .catch(error => {
-          console.error('Camera access error:', error);
           showMessage('Camera access error: ' + error.message, 'error');
           elements.retryQrBtn.classList.remove('hidden');
         });
@@ -1439,63 +1271,61 @@
       
       elements.captureBtn.disabled = false;
       
-      // iOS-specific camera settings
-      const videoConstraints = isIOS() ? {
-        facingMode: 'user',
-        width: { ideal: 480, min: 320, max: 640 }, // Lower resolution for iOS
-        height: { ideal: 600, min: 400, max: 800 },
-        aspectRatio: { ideal: 4/5 }
-      } : {
+      // iOS-friendly camera configuration
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const videoConstraints = {
         facingMode: 'user',
         width: { ideal: 640, min: 320, max: 1280 },
         height: { ideal: 800, min: 400, max: 1600 },
         aspectRatio: { ideal: 4/5 }
       };
       
+      // iOS-specific optimizations
+      if (isIOS) {
+        // Remove aspectRatio constraint for iOS as it can cause issues
+        delete videoConstraints.aspectRatio;
+        // Use more conservative resolution for iOS
+        videoConstraints.width = { ideal: 480, min: 320, max: 640 };
+        videoConstraints.height = { ideal: 600, min: 400, max: 800 };
+      }
+      
       navigator.mediaDevices.getUserMedia({ 
-        video: videoConstraints
+        video: videoConstraints,
+        audio: false // Explicitly disable audio to prevent video recording mode
       })
       .then(stream => {
         currentStream = stream;
         elements.selfieCam.srcObject = stream;
         
-        // iOS-specific video handling
-        if (isIOS()) {
-          elements.selfieCam.setAttribute('playsinline', 'true');
-          elements.selfieCam.setAttribute('webkit-playsinline', 'true');
+        // iOS-specific: Wait for video to be ready
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          elements.selfieCam.addEventListener('loadedmetadata', () => {
+            // Ensure video is playing on iOS
+            elements.selfieCam.play().then(() => {
+              showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
+            }).catch(() => {
+              showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
+            });
+          }, { once: true });
+        } else {
+          showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
         }
-        
-        showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
       })
       .catch(error => {
-        console.error('Camera access error:', error);
         showMessage('Could not access camera: ' + error.message, 'error');
       });
     }
 
     function setupEventListeners() {
-      // iOS-specific event handling
-      if (isIOS()) {
-        // Use touchstart for iOS to avoid delays
-        elements.captureBtn.addEventListener('touchstart', captureSelfie, { passive: false });
-        elements.retakeBtn.addEventListener('touchstart', retakeSelfie, { passive: false });
-        elements.submitBtn.addEventListener('touchstart', submitAttendance, { passive: false });
-        elements.resetBtn.addEventListener('touchstart', resetApp, { passive: false });
-        elements.retryQrBtn.addEventListener('touchstart', retryQRScan, { passive: false });
-        elements.retrySubmitBtn.addEventListener('touchstart', retrySubmission, { passive: false });
-        elements.cancelRetryBtn.addEventListener('touchstart', hideRetrySection, { passive: false });
-        elements.branchSelect.addEventListener('change', validateAndSubmit);
-      } else {
-        // Standard event handling for other platforms
-        elements.captureBtn.addEventListener('click', captureSelfie);
-        elements.retakeBtn.addEventListener('click', retakeSelfie);
-        elements.submitBtn.addEventListener('click', submitAttendance);
-        elements.resetBtn.addEventListener('click', resetApp);
-        elements.retryQrBtn.addEventListener('click', retryQRScan);
-        elements.retrySubmitBtn.addEventListener('click', retrySubmission);
-        elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
-        elements.branchSelect.addEventListener('change', validateAndSubmit);
-      }
+      elements.captureBtn.addEventListener('click', captureSelfie);
+      elements.retakeBtn.addEventListener('click', retakeSelfie);
+      elements.submitBtn.addEventListener('click', submitAttendance);
+      elements.resetBtn.addEventListener('click', resetApp);
+      elements.retryQrBtn.addEventListener('click', retryQRScan);
+      elements.retrySubmitBtn.addEventListener('click', retrySubmission);
+      elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
+      elements.branchSelect.addEventListener('change', validateAndSubmit);
     }
 
     function captureSelfie() {
@@ -1503,85 +1333,79 @@
       const canvas = elements.canvas;
       const ctx = canvas.getContext('2d');
       
-      try {
-        // iOS-specific canvas handling
-        if (isIOS()) {
-          // Wait for video to be ready on iOS
-          if (video.readyState < 2) {
-            showMessage('Camera not ready yet. Please wait...', 'info');
-            setTimeout(captureSelfie, 500);
-            return;
-          }
-        }
-        
-        // Set canvas size to match video aspect ratio
-        const aspectRatio = 4/5;
-        const maxWidth = isIOS() ? 480 : 640; // Lower resolution for iOS
-        const maxHeight = isIOS() ? 600 : 800;
-        
-        let canvasWidth = maxWidth;
-        let canvasHeight = maxHeight;
-        
-        // Maintain aspect ratio
-        if (canvasWidth / canvasHeight > aspectRatio) {
-          canvasWidth = canvasHeight * aspectRatio;
-        } else {
-          canvasHeight = canvasWidth / aspectRatio;
-        }
-        
-        canvas.width = canvasWidth;
-        canvas.height = canvasHeight;
-        
-        // iOS-specific canvas drawing
-        if (isIOS()) {
-          // Use a try-catch for iOS canvas operations
-          try {
-            ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
-          } catch (error) {
-            console.error('iOS canvas drawing error:', error);
-            showMessage('Camera capture failed. Please try again.', 'error');
-            return;
-          }
-        } else {
-          ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
-        }
-        
-        // iOS-specific image quality
-        const quality = isIOS() ? 0.7 : 0.8; // Lower quality for iOS
-        selfieData = canvas.toDataURL('image/jpeg', quality);
-        
-        // Show preview
-        elements.preview.src = selfieData;
-        elements.previewContainer.classList.remove('hidden');
-        elements.selfieCam.classList.add('hidden');
-        
-        // Stop video stream
-        if (currentStream) {
-          currentStream.getTracks().forEach(track => track.stop());
-          currentStream = null;
-        }
-        
-        elements.captureBtn.classList.add('hidden');
-        elements.retakeBtn.classList.remove('hidden');
-        elements.submitBtn.disabled = false;
-        
-        elements.selfieStep.classList.remove('active');
-        elements.selfieStep.classList.add('completed');
-        elements.submitStep.classList.add('active');
-        
-        // Update status indicators
-        const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
-        selfieIndicator.classList.remove('active');
-        selfieIndicator.classList.add('completed');
-        
-        const submitIndicator = elements.submitStep.querySelector('.status-indicator');
-        submitIndicator.classList.add('active');
-        
-        showMessage('Selfie captured! Click "Submit Attendance" to continue.', 'success');
-      } catch (error) {
-        console.error('Selfie capture error:', error);
-        showMessage('Failed to capture selfie. Please try again.', 'error');
+      // iOS-specific: Ensure video is ready before capturing
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS && (video.videoWidth === 0 || video.videoHeight === 0)) {
+        showMessage('Camera not ready yet. Please wait a moment...', 'info');
+        setTimeout(captureSelfie, 500);
+        return;
       }
+      
+      // iOS-friendly canvas configuration
+      
+      // Get actual video dimensions
+      const videoWidth = video.videoWidth;
+      const videoHeight = video.videoHeight;
+      
+      // Set canvas size based on actual video dimensions
+      let canvasWidth = videoWidth;
+      let canvasHeight = videoHeight;
+      
+      // For iOS, use more conservative dimensions to prevent memory issues
+      if (isIOS) {
+        const maxDimension = 640;
+        if (canvasWidth > maxDimension || canvasHeight > maxDimension) {
+          if (canvasWidth > canvasHeight) {
+            canvasHeight = (canvasHeight * maxDimension) / canvasWidth;
+            canvasWidth = maxDimension;
+          } else {
+            canvasWidth = (canvasWidth * maxDimension) / canvasHeight;
+            canvasHeight = maxDimension;
+          }
+        }
+      }
+      
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      
+      // Clear canvas first
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      
+      // Draw video frame to canvas
+      ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+      
+      // Use higher quality for iOS
+      const quality = isIOS ? 0.9 : 0.8;
+      selfieData = canvas.toDataURL('image/jpeg', quality);
+      
+      // Show preview
+      elements.preview.src = selfieData;
+      elements.previewContainer.classList.remove('hidden');
+      elements.selfieCam.classList.add('hidden');
+      
+      // Stop video stream
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      
+      elements.captureBtn.classList.add('hidden');
+      elements.retakeBtn.classList.remove('hidden');
+      elements.submitBtn.disabled = false;
+      
+      elements.selfieStep.classList.remove('active');
+      elements.selfieStep.classList.add('completed');
+      elements.submitStep.classList.add('active');
+      
+      // Update status indicators
+      const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
+      selfieIndicator.classList.remove('active');
+      selfieIndicator.classList.add('completed');
+      
+      const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+      submitIndicator.classList.add('active');
+      
+      showMessage('Selfie captured! Click "Submit Attendance" to continue.', 'success');
     }
 
     function retakeSelfie() {
@@ -1612,72 +1436,6 @@
         branch: elements.branchSelect.value // Add selected branch
       };
 
-      // iOS-specific submission handling
-      if (isIOS()) {
-        // Use fetch API for iOS with better error handling
-        submitAttendanceIOS(submissionData);
-      } else {
-        // Use iframe method for other platforms
-        submitAttendanceStandard(submissionData);
-      }
-    }
-
-    function submitAttendanceIOS(submissionData) {
-      // iOS-specific submission using fetch
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'data=' + encodeURIComponent(JSON.stringify(submissionData))
-      })
-      .then(response => {
-        if (response.ok) {
-          return response.text();
-        } else {
-          throw new Error('Network response was not ok');
-        }
-      })
-      .then(data => {
-        try {
-          const result = JSON.parse(data);
-          if (result.status === 'success') {
-            elements.submitBtn.classList.remove('loading');
-            successCount++;
-            updateStats();
-            showMessage(`✅ Attendance recorded successfully!`, 'success');
-            elements.submitStep.classList.remove('active');
-            elements.submitStep.classList.add('completed');
-            
-            // Update submit step indicator to completed
-            const submitIndicator = elements.submitStep.querySelector('.status-indicator');
-            submitIndicator.classList.remove('active');
-            submitIndicator.classList.add('completed');
-            
-            // Auto-reset after 3 seconds
-            setTimeout(() => {
-              resetApp();
-            }, 3000);
-          } else {
-            throw new Error(result.message || 'Submission failed');
-          }
-        } catch (error) {
-          throw new Error('Invalid response format');
-        }
-      })
-      .catch(error => {
-        console.error('iOS submission error:', error);
-        errorCount++;
-        updateStats();
-        elements.submitBtn.classList.remove('loading');
-        elements.submitBtn.disabled = false;
-        
-        showMessage(`❌ Submission failed: ${error.message}`, 'error');
-        showRetrySection();
-      });
-    }
-
-    function submitAttendanceStandard(submissionData) {
       // Create a form to submit data (bypasses CORS)
       const form = document.createElement('form');
       form.method = 'POST';
@@ -1995,27 +1753,8 @@
       return rows;
     }
 
-    // iOS-specific debugging
-    function logIOSInfo() {
-      if (isIOS()) {
-        console.log('iOS Device Detected');
-        console.log('User Agent:', navigator.userAgent);
-        console.log('Platform:', navigator.platform);
-        console.log('Max Touch Points:', navigator.maxTouchPoints);
-        console.log('Viewport:', window.innerWidth + 'x' + window.innerHeight);
-        
-        // Check for iOS-specific features
-        console.log('WebKit:', 'webkitTransform' in document.body.style);
-        console.log('Touch Events:', 'ontouchstart' in window);
-        console.log('Media Devices:', !!navigator.mediaDevices);
-      }
-    }
-
     // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', () => {
-      logIOSInfo();
-      initApp();
-    });
+    document.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
 </html>
