@@ -135,23 +135,61 @@ function doPost(e) {
   try {
     // Parse incoming POST data - handle both form data and JSON
     let payload;
-    if (e.parameter.data) {
-      // Form data from iframe submission
-      payload = JSON.parse(e.parameter.data);
+    const contentType = e.postData.type || '';
+    
+    console.log('Received POST request with content type:', contentType);
+    console.log('Post data contents length:', e.postData.contents.length);
+    console.log('Available parameters:', Object.keys(e.parameter));
+    
+    if (contentType.includes('application/json')) {
+      // Direct JSON data from fetch API (Android/Desktop)
+      try {
+        payload = JSON.parse(e.postData.contents);
+        console.log('Parsed JSON payload successfully');
+      } catch (jsonError) {
+        console.error('JSON parsing failed:', jsonError);
+        throw new Error('Invalid JSON data received');
+      }
+    } else if (e.parameter.data) {
+      // Form data from iframe submission (iOS - most reliable method)
+      try {
+        payload = JSON.parse(e.parameter.data);
+        console.log('Parsed form data payload successfully (iOS method)');
+      } catch (formError) {
+        console.error('Form data parsing failed:', formError);
+        console.error('Raw form data:', e.parameter.data);
+        throw new Error('Invalid form data received');
+      }
     } else {
-      // Direct JSON data
-      payload = JSON.parse(e.postData.contents);
+      // Try to parse as JSON anyway (fallback)
+      try {
+        payload = JSON.parse(e.postData.contents);
+        console.log('Parsed raw content as JSON successfully');
+      } catch (rawError) {
+        console.error('Raw content parsing failed:', rawError);
+        throw new Error('Unable to parse request data');
+      }
     }
+    
+    console.log('Payload keys:', Object.keys(payload));
     
     const staffId = payload.id;
     const selfieData = payload.selfie; // Base64 dataURL string
     const locationData = payload.location; // Location object
     const selectedBranch = payload.branch; // Selected branch from dropdown
-    if (!staffId) throw 'Staff ID is missing.';
+    
+    if (!staffId) {
+      console.error('Staff ID is missing in payload');
+      throw new Error('Staff ID is missing.');
+    }
+
+    console.log('Processing attendance for staff ID:', staffId);
+    console.log('Location data:', locationData);
+    console.log('Selected branch:', selectedBranch);
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName(SHEET_NAME);
-    if (!sheet) throw `Sheet "${SHEET_NAME}" not found.`;
+    if (!sheet) throw new Error(`Sheet "${SHEET_NAME}" not found.`);
 
     // Get next Sr.No.
     const lastRow = sheet.getLastRow();
@@ -174,14 +212,22 @@ function doPost(e) {
     // Upload selfie (if present) to Drive
     let selfieUrl = '';
     if (selfieData && selfieData.indexOf('base64,') !== -1) {
-      const imageBlob = Utilities.newBlob(
-        Utilities.base64Decode(selfieData.split('base64,')[1]),
-        'image/png',
-        `${logId}.png`
-      );
-      const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-      const file = folder.createFile(imageBlob);
-      selfieUrl = file.getUrl();
+      try {
+        const imageBlob = Utilities.newBlob(
+          Utilities.base64Decode(selfieData.split('base64,')[1]),
+          'image/png',
+          `${logId}.png`
+        );
+        const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+        const file = folder.createFile(imageBlob);
+        selfieUrl = file.getUrl();
+        console.log('Selfie uploaded successfully:', selfieUrl);
+      } catch (selfieError) {
+        console.error('Selfie upload failed:', selfieError);
+        selfieUrl = 'Upload failed';
+      }
+    } else {
+      console.log('No selfie data provided or invalid format');
     }
 
     // Format location data with enhanced iOS support
@@ -210,6 +256,7 @@ function doPost(e) {
           branch = selectedBranch;
           const distance = calculateDistanceFromBranch(locationData.latitude, locationData.longitude, selectedBranch);
           distanceValidation = distance <= 100 ? 'Valid' : 'Invalid - Too far';
+          console.log('Distance validation:', distance, 'meters');
         } else {
           branch = 'No branch selected';
           distanceValidation = 'Unknown';
@@ -232,6 +279,17 @@ function doPost(e) {
       distanceValidation = 'Invalid';
     }
 
+    console.log('Final data to append:');
+    console.log('- Sr.No:', srNo);
+    console.log('- Log ID:', logId);
+    console.log('- Staff ID:', staffId);
+    console.log('- Date:', date);
+    console.log('- Time:', time);
+    console.log('- Selfie URL:', selfieUrl);
+    console.log('- Location:', locationString);
+    console.log('- Branch:', branch);
+    console.log('- Distance Validation:', distanceValidation);
+
     // Append new row
     sheet.appendRow([
       srNo,
@@ -246,34 +304,47 @@ function doPost(e) {
       distanceValidation
     ]);
 
+    console.log('Row appended successfully to sheet');
+
     // Success response with enhanced location info
+    const responseData = {
+      status: 'success',
+      logId: logId,
+      date: date,
+      time: time,
+      selfieUrl: selfieUrl,
+      location: locationString,
+      googleMapLink: googleMapLink,
+      branch: branch,
+      distanceValidation: distanceValidation,
+      locationDetails: {
+        hasLocation: locationData && locationData.latitude !== 0 && locationData.longitude !== 0,
+        accuracy: locationData ? locationData.accuracy : null,
+        timestamp: locationData ? locationData.timestamp : null,
+        error: locationData ? locationData.error : null
+      }
+    };
+
+    console.log('Sending success response:', responseData);
+
     return ContentService
-      .createTextOutput(JSON.stringify({
-        status: 'success',
-        logId: logId,
-        date: date,
-        time: time,
-        selfieUrl: selfieUrl,
-        location: locationString,
-        googleMapLink: googleMapLink,
-        branch: branch,
-        distanceValidation: distanceValidation,
-        locationDetails: {
-          hasLocation: locationData && locationData.latitude !== 0 && locationData.longitude !== 0,
-          accuracy: locationData ? locationData.accuracy : null,
-          timestamp: locationData ? locationData.timestamp : null,
-          error: locationData ? locationData.error : null
-        }
-      }))
+      .createTextOutput(JSON.stringify(responseData))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
+    console.error('Error in doPost:', err);
+    
     // Error response
+    const errorResponse = {
+      status: 'error',
+      message: err.toString(),
+      timestamp: new Date().toISOString()
+    };
+    
+    console.error('Sending error response:', errorResponse);
+    
     return ContentService
-      .createTextOutput(JSON.stringify({
-        status: 'error',
-        message: err.toString()
-      }))
+      .createTextOutput(JSON.stringify(errorResponse))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
