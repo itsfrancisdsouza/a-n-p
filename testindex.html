@@ -1149,18 +1149,6 @@
       </button>
     </div>
 
-    <!-- Debug Test Section (for debugging) -->
-    <div id="iosTestSection" class="retry-section hidden">
-      <h4><i class="fas fa-bug"></i> Debug Test</h4>
-      <p>Test form submission method</p>
-      <button id="testIOSBtn" class="btn">
-        <i class="fas fa-play"></i> Test Form Submission
-      </button>
-      <button id="closeTestBtn" class="btn secondary">
-        <i class="fas fa-times"></i> Close
-      </button>
-    </div>
-
     <!-- Stats -->
     <div class="stats">
       <div class="stat-item">
@@ -1224,10 +1212,7 @@
       branchSelect: document.getElementById('branchSelect'),
       distanceText: document.getElementById('distanceText'),
       locationPermissionBtn: document.getElementById('locationPermissionBtn'),
-      requestLocationBtn: document.getElementById('requestLocationBtn'),
-      iosTestSection: document.getElementById('iosTestSection'),
-      testIOSBtn: document.getElementById('testIOSBtn'),
-      closeTestBtn: document.getElementById('closeTestBtn')
+      requestLocationBtn: document.getElementById('requestLocationBtn')
     };
 
     // Initialize the app
@@ -1245,59 +1230,6 @@
       setupEventListeners();
       updateStats();
       fetchStaffDatabase(); // Fetch staff database
-    }
-
-    // Test form submission (for debugging)
-    function testFormSubmission() {
-      console.log('Testing form submission...');
-      
-      const testData = {
-        id: 'TEST123',
-        selfie: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-        location: {
-          latitude: 19.0760,
-          longitude: 72.8777,
-          accuracy: 10,
-          timestamp: new Date().toISOString()
-        },
-        branch: 'Test Branch'
-      };
-      
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = WEB_APP_URL;
-      form.target = 'test-iframe';
-      form.style.display = 'none';
-      form.enctype = 'application/x-www-form-urlencoded';
-
-      const dataInput = document.createElement('input');
-      dataInput.type = 'hidden';
-      dataInput.name = 'data';
-      dataInput.value = JSON.stringify(testData);
-      form.appendChild(dataInput);
-
-      let iframe = document.getElementById('test-iframe');
-      if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'test-iframe';
-        iframe.name = 'test-iframe';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-      }
-
-      iframe.onload = () => {
-        console.log('Test form submission completed');
-        showMessage('Form submission test completed successfully!', 'success');
-      };
-
-      document.body.appendChild(form);
-      form.submit();
-      
-      setTimeout(() => {
-        if (form.parentNode) {
-          form.parentNode.removeChild(form);
-        }
-      }, 5000);
     }
 
     // Get user location with iOS-specific handling
@@ -1498,20 +1430,6 @@
       elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
       elements.branchSelect.addEventListener('change', validateAndSubmit);
       elements.requestLocationBtn.addEventListener('click', requestLocationPermission);
-      elements.testIOSBtn.addEventListener('click', testFormSubmission);
-      elements.closeTestBtn.addEventListener('click', hideDebugSection);
-      
-      // Add debug button for development (show on all devices)
-      const debugBtn = document.createElement('button');
-      debugBtn.innerHTML = '<i class="fas fa-bug"></i> Debug';
-      debugBtn.className = 'btn secondary';
-      debugBtn.style.position = 'absolute';
-      debugBtn.style.top = '10px';
-      debugBtn.style.right = '10px';
-      debugBtn.style.fontSize = '12px';
-      debugBtn.style.padding = '8px 12px';
-      debugBtn.addEventListener('click', showDebugSection);
-      document.querySelector('.container').appendChild(debugBtn);
     }
 
     function captureSelfie() {
@@ -1622,129 +1540,58 @@
       elements.submitBtn.disabled = true;
       showMessage('Submitting attendance...', 'info');
 
-      // Prepare submission data with location
+      // Prepare submission data
       const submissionData = {
         id: scannedId,
         selfie: selfieData,
         location: userLocation,
-        branch: elements.branchSelect.value // Add selected branch
+        branch: elements.branchSelect.value
       };
 
-      // Log submission details for debugging
-      console.log('=== SUBMISSION START ===');
-      console.log('Staff ID:', scannedId);
-      console.log('Selfie data length:', selfieData.length);
-      console.log('Location data:', userLocation);
-      console.log('Selected branch:', elements.branchSelect.value);
-      console.log('Submission URL:', WEB_APP_URL);
-      
-      // Use HTML form submission for ALL devices (most reliable method)
-      showMessage('Submitting via form method...', 'info');
-      console.log('Form submission started');
-      
-      // Create form for submission
+      // Simple HTML form POST
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = WEB_APP_URL;
       form.target = 'hidden-iframe';
       form.style.display = 'none';
-      form.enctype = 'application/x-www-form-urlencoded';
 
-      // Add data as form field
       const dataInput = document.createElement('input');
       dataInput.type = 'hidden';
       dataInput.name = 'data';
       dataInput.value = JSON.stringify(submissionData);
       form.appendChild(dataInput);
 
-      // Create iframe for response
+      // Create iframe
       let iframe = document.getElementById('hidden-iframe');
       if (!iframe) {
         iframe = document.createElement('iframe');
         iframe.id = 'hidden-iframe';
         iframe.name = 'hidden-iframe';
         iframe.style.display = 'none';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = 'none';
         document.body.appendChild(iframe);
       }
 
-      // Form submission handling with better error handling
-      let submissionTimeout;
-      let submissionAttempted = false;
-      
-      const handleSuccess = () => {
-        if (submissionAttempted) return;
-        submissionAttempted = true;
-        clearTimeout(submissionTimeout);
-        
-        console.log('Form submission successful');
-        console.log('=== SUBMISSION SUCCESS ===');
-        
-        // Show success message
-        elements.submitBtn.classList.remove('loading');
-        successCount++;
-        updateStats();
-        showMessage(`✅ Attendance recorded successfully!`, 'success');
-        elements.submitStep.classList.remove('active');
-        elements.submitStep.classList.add('completed');
-        
-        // Update submit step indicator to completed
-        const submitIndicator = elements.submitStep.querySelector('.status-indicator');
-        submitIndicator.classList.remove('active');
-        submitIndicator.classList.add('completed');
-        
-        // Auto-reset after 3 seconds
-        setTimeout(() => {
-          resetApp();
-        }, 3000);
-        
-        // Clean up form
-        if (form.parentNode) {
-          form.parentNode.removeChild(form);
-        }
-      };
-
-      const handleError = (error) => {
-        if (submissionAttempted) return;
-        submissionAttempted = true;
-        clearTimeout(submissionTimeout);
-        
-        console.error('Form submission failed:', error);
-        errorCount++;
-        updateStats();
-        elements.submitBtn.classList.remove('loading');
-        elements.submitBtn.disabled = false;
-        
-        showMessage(`❌ Submission failed: ${error}`, 'error');
-        showRetrySection();
-        
-        // Clean up form
-        if (form.parentNode) {
-          form.parentNode.removeChild(form);
-        }
-      };
-
-      // Try iframe onload first
+      // Simple success handling
       iframe.onload = () => {
-        console.log('Iframe loaded successfully');
-        setTimeout(handleSuccess, 2000);
+        setTimeout(() => {
+          elements.submitBtn.classList.remove('loading');
+          successCount++;
+          updateStats();
+          showMessage(`✅ Attendance recorded successfully!`, 'success');
+          elements.submitStep.classList.remove('active');
+          elements.submitStep.classList.add('completed');
+          
+          const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+          submitIndicator.classList.remove('active');
+          submitIndicator.classList.add('completed');
+          
+          setTimeout(() => {
+            resetApp();
+          }, 3000);
+        }, 2000);
       };
-      
-      // Handle iframe errors
-      iframe.onerror = () => {
-        console.log('Iframe error occurred');
-        setTimeout(handleSuccess, 3000); // Still assume success after error
-      };
-      
-      // Set timeout as backup
-      submissionTimeout = setTimeout(() => {
-        console.log('Form submission timeout, assuming success');
-        handleSuccess();
-      }, 15000); // 15 second timeout
 
-      // Submit the form
+      // Submit form
       document.body.appendChild(form);
       form.submit();
     }
@@ -1763,20 +1610,6 @@
 
     function showRetrySection() {
       elements.retrySection.classList.remove('hidden');
-      
-      // Add troubleshooting information for all devices
-      const retryText = elements.retrySection.querySelector('p');
-      retryText.innerHTML = `
-        <p>Submission failed. This can happen due to network issues.</p>
-        <p><strong>Troubleshooting tips:</strong></p>
-        <ul style="text-align: left; margin: 10px 0; padding-left: 20px;">
-          <li>Ensure you have a stable internet connection</li>
-          <li>Try switching between WiFi and mobile data</li>
-          <li>Close and reopen the browser</li>
-          <li>Check if location services are enabled</li>
-          <li>Try again in a few moments</li>
-        </ul>
-      `;
     }
 
     function hideRetrySection() {
@@ -1784,11 +1617,11 @@
     }
 
     function showDebugSection() {
-      elements.iosTestSection.classList.remove('hidden');
+      // This function is no longer needed as the debug section is removed
     }
 
     function hideDebugSection() {
-      elements.iosTestSection.classList.add('hidden');
+      // This function is no longer needed as the debug section is removed
     }
 
     function retryQRScan() {
@@ -1959,49 +1792,81 @@
       try {
         showMessage('Loading staff database...', 'info');
         
-        // Use a simple approach with default branches for now
-        const defaultBranches = [
-          'Mumbai Central',
-          'Mumbai West', 
-          'Mumbai North',
-          'Mumbai South',
-          'Other Location'
-        ];
-        
-        const branchSelect = document.getElementById('branchSelect');
-        branchSelect.innerHTML = '<option value="">Select a branch...</option>';
-        
-        defaultBranches.forEach(branchName => {
-          const option = document.createElement('option');
-          option.value = branchName;
-          option.textContent = branchName;
-          branchSelect.appendChild(option);
-        });
-        
-        // Create a simple staff database structure
-        staffDatabase = defaultBranches.map(branchName => ({
-          'Branch': branchName,
-          'Location': '19.0760, 72.8777' // Default Mumbai coordinates
-        }));
-        
-        showMessage('Staff database loaded successfully!', 'success');
+        // Use XMLHttpRequest to fetch CSV (works on all devices including iOS)
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', STAFF_DB_URL, true);
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              try {
+                const csvText = xhr.responseText;
+                const rows = parseCSV(csvText);
+                
+                // Parse CSV data
+                const headers = rows[0];
+                const dataRows = rows.slice(1);
+
+                staffDatabase = dataRows.map(row => {
+                  const branch = {};
+                  headers.forEach((header, index) => {
+                    branch[header.trim()] = row[index] ? row[index].trim() : '';
+                  });
+                  return branch;
+                });
+
+                // Populate branch dropdown
+                const branchSelect = document.getElementById('branchSelect');
+                branchSelect.innerHTML = '<option value="">Select a branch...</option>';
+                
+                // Get unique branches from the database
+                const uniqueBranches = [...new Set(staffDatabase.map(branch => branch['Branch']).filter(branch => branch))];
+                
+                uniqueBranches.forEach(branchName => {
+                  const option = document.createElement('option');
+                  option.value = branchName;
+                  option.textContent = branchName;
+                  branchSelect.appendChild(option);
+                });
+                
+                showMessage('Staff database loaded successfully!', 'success');
+              } catch (error) {
+                console.error('Error parsing CSV data:', error);
+                showMessage('Failed to parse CSV. Using default branches.', 'info');
+                populateDefaultBranches();
+              }
+            } else {
+              console.error('Failed to fetch CSV:', xhr.status);
+              showMessage('Failed to load CSV. Using default branches.', 'info');
+              populateDefaultBranches();
+            }
+          }
+        };
+        xhr.send();
         
       } catch (error) {
         console.error('Error loading staff database:', error);
         showMessage('Failed to load staff database. Using default branches.', 'info');
-        
-        // Fallback to default branches
-        const defaultBranches = ['Mumbai Central', 'Mumbai West', 'Mumbai North', 'Other Location'];
-        const branchSelect = document.getElementById('branchSelect');
-        branchSelect.innerHTML = '<option value="">Select a branch...</option>';
-        
-        defaultBranches.forEach(branchName => {
-          const option = document.createElement('option');
-          option.value = branchName;
-          option.textContent = branchName;
-          branchSelect.appendChild(option);
-        });
+        populateDefaultBranches();
       }
+    }
+
+    function populateDefaultBranches() {
+      const defaultBranches = ['Mumbai Central', 'Mumbai West', 'Mumbai North', 'Other Location'];
+      const branchSelect = document.getElementById('branchSelect');
+      branchSelect.innerHTML = '<option value="">Select a branch...</option>';
+      
+      defaultBranches.forEach(branchName => {
+        const option = document.createElement('option');
+        option.value = branchName;
+        option.textContent = branchName;
+        branchSelect.appendChild(option);
+      });
+      
+      // Create staff database structure
+      staffDatabase = defaultBranches.map(branchName => ({
+        'Branch': branchName,
+        'Location': '19.0760, 72.8777' // Default Mumbai coordinates
+      }));
     }
 
     function parseCSV(csvText) {
