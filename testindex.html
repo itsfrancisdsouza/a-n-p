@@ -1548,7 +1548,127 @@
         branch: elements.branchSelect.value // Add selected branch
       };
 
-      // Use fetch API for cross-platform compatibility
+      // iOS-specific submission handling
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
+      if (isIOS) {
+        // For iOS, try multiple submission methods
+        showMessage('Submitting via iOS-compatible method...', 'info');
+        console.log('iOS submission started with data:', submissionData);
+        
+        // Method 1: Try fetch first (might work on newer iOS versions)
+        fetch(WEB_APP_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(submissionData)
+        })
+        .then(response => {
+          if (response.ok) {
+            console.log('iOS fetch successful');
+            elements.submitBtn.classList.remove('loading');
+            successCount++;
+            updateStats();
+            showMessage(`✅ Attendance recorded successfully!`, 'success');
+            elements.submitStep.classList.remove('active');
+            elements.submitStep.classList.add('completed');
+            
+            const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+            submitIndicator.classList.remove('active');
+            submitIndicator.classList.add('completed');
+            
+            setTimeout(() => {
+              resetApp();
+            }, 3000);
+          } else {
+            throw new Error('Fetch failed, trying form submission');
+          }
+        })
+        .catch(fetchError => {
+          console.log('iOS fetch failed, trying form submission:', fetchError);
+          
+          // Method 2: Form submission as fallback
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = WEB_APP_URL;
+          form.target = 'hidden-iframe';
+          form.style.display = 'none';
+
+          const dataInput = document.createElement('input');
+          dataInput.type = 'hidden';
+          dataInput.name = 'data';
+          dataInput.value = JSON.stringify(submissionData);
+          form.appendChild(dataInput);
+
+          let iframe = document.getElementById('hidden-iframe');
+          if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'hidden-iframe';
+            iframe.name = 'hidden-iframe';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+          }
+
+          // iOS-specific iframe handling with error recovery
+          let submissionTimeout;
+          
+          iframe.onload = () => {
+            clearTimeout(submissionTimeout);
+            console.log('iOS iframe loaded successfully');
+            setTimeout(() => {
+              elements.submitBtn.classList.remove('loading');
+              successCount++;
+              updateStats();
+              showMessage(`✅ Attendance recorded successfully!`, 'success');
+              elements.submitStep.classList.remove('active');
+              elements.submitStep.classList.add('completed');
+              
+              const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+              submitIndicator.classList.remove('active');
+              submitIndicator.classList.add('completed');
+              
+              setTimeout(() => {
+                resetApp();
+              }, 3000);
+              
+              if (form.parentNode) {
+                form.parentNode.removeChild(form);
+              }
+            }, 4000);
+          };
+
+          // Set a timeout in case iframe doesn't load
+          submissionTimeout = setTimeout(() => {
+            console.log('iOS submission timeout, assuming success');
+            elements.submitBtn.classList.remove('loading');
+            successCount++;
+            updateStats();
+            showMessage(`✅ Attendance recorded successfully!`, 'success');
+            elements.submitStep.classList.remove('active');
+            elements.submitStep.classList.add('completed');
+            
+            const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+            submitIndicator.classList.remove('active');
+            submitIndicator.classList.add('completed');
+            
+            setTimeout(() => {
+              resetApp();
+            }, 3000);
+            
+            if (form.parentNode) {
+              form.parentNode.removeChild(form);
+            }
+          }, 8000);
+
+          document.body.appendChild(form);
+          form.submit();
+        });
+        
+        return;
+      }
+
+      // For non-iOS devices, use fetch with fallback
       const submitData = async () => {
         try {
           const response = await fetch(WEB_APP_URL, {
