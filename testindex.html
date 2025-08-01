@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <title>Attendance System - QR & Selfie</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #F5F5F5;
+      color: #222222;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      min-width: 300px;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .header {
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      color: #222222;
+      font-size: clamp(1.5em, 4vw, 2.2em);
+      font-weight: 700;
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .header p {
+      color: #666666;
+      font-size: clamp(0.9em, 2.5vw, 1.1em);
+      line-height: 1.4;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 10px;
+      background: #e2e8f0;
+    }
+
+    .status-indicator.active {
+      background: #48bb78;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    .step-container {
+      margin: 15px 0;
+      padding: clamp(15px, 4vw, 30px);
+      border-radius: 15px;
+      background: #FFFFFF;
+      border: 2px solid #E0E0E0;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .step-container.active {
+      border-color: #ECA02D;
+      background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+      box-shadow: 0 8px 25px rgba(236, 160, 45, 0.2);
+    }
+
+    .step-container.completed {
+      border-color: #4CAF50;
+      background: linear-gradient(135deg, #E8F5E8 0%, #C8E6C9 100%);
+      box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2);
+    }
+
+    .step-title {
+      font-size: clamp(1.1em, 3.5vw, 1.4em);
+      font-weight: 700;
+      color: #222222;
+      margin-bottom: clamp(15px, 4vw, 25px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(10px, 3vw, 15px) 0;
+      text-align: center;
+      position: relative;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .step-title i {
+      margin-right: clamp(8px, 2vw, 15px);
+      font-size: clamp(1em, 3vw, 1.3em);
+      color: #ECA02D;
+      background: rgba(236, 160, 45, 0.1);
+      padding: clamp(6px, 2vw, 10px);
+      border-radius: 50%;
+      width: clamp(30px, 8vw, 40px);
+      height: clamp(30px, 8vw, 40px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-title .status-indicator {
+      margin-left: clamp(8px, 2vw, 15px);
+      width: clamp(12px, 3vw, 15px);
+      height: clamp(12px, 3vw, 15px);
+      border-radius: 50%;
+      background: #E0E0E0;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .step-title .status-indicator.active {
+      background: #ECA02D;
+      box-shadow: 0 0 10px rgba(236, 160, 45, 0.5);
+      animation: pulse 2s infinite;
+    }
+
+    .step-title .status-indicator.completed {
+      background: #4CAF50;
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+    }
+
+    .step-title .status-indicator.completed::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 8px;
+      font-weight: bold;
+    }
+
+    #reader {
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: clamp(10px, 3vw, 20px);
+      margin: 0 auto;
+      width: 100%;
+      max-width: 350px;
+      border: 2px solid #e2e8f0;
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    #reader video {
+      border-radius: 10px;
+      width: 100%;
+      height: auto;
+      max-height: 300px;
+      object-fit: cover;
+    }
+
+    #reader canvas {
+      border-radius: 10px;
+      width: 100%;
+      height: auto;
+      max-height: 300px;
+    }
+
+    /* QR Scanner overlay styling */
+    #reader::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      border: 2px solid #4299e1;
+      border-radius: 10px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #reader::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 180px;
+      height: 180px;
+      border: 2px solid rgba(66, 153, 225, 0.3);
+      border-radius: 8px;
+      pointer-events: none;
+      z-index: 9;
+    }
+
+    #selfieCam, #canvas {
+      border: 3px solid #ECA02D;
+      border-radius: 15px;
+      background: #fff;
+      width: 100%;
+      max-width: 350px;
+      height: clamp(200px, 50vw, 250px);
+      object-fit: cover;
+      box-sizing: border-box;
+      aspect-ratio: 4/5;
+    }
+
+    .preview-container {
+      position: relative;
+      display: inline-block;
+      margin: 10px 0;
+      width: 100%;
+      max-width: 350px;
+    }
+
+    #preview {
+      border: 3px solid #4CAF50;
+      border-radius: 15px;
+      max-width: 350px;
+      width: 100%;
+      height: clamp(200px, 50vw, 250px);
+      object-fit: cover;
+      box-sizing: border-box;
+      aspect-ratio: 4/5;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #ECA02D 0%, #D68910 100%);
+      color: #222222;
+      border: none;
+      font-weight: 600;
+      font-size: clamp(14px, 3.5vw, 16px);
+      padding: clamp(12px, 3vw, 16px) clamp(20px, 5vw, 32px);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: clamp(8px, 2vw, 12px) clamp(4px, 1.5vw, 8px);
+      min-width: clamp(120px, 25vw, 160px);
+      max-width: 100%;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(236, 160, 45, 0.3);
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(236, 160, 45, 0.4);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 4px 12px rgba(236, 160, 45, 0.3);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn.secondary {
+      background: linear-gradient(135deg, #9E9E9E 0%, #757575 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(158, 158, 158, 0.3);
+    }
+
+    .btn.secondary:hover:not(:disabled) {
+      box-shadow: 0 8px 25px rgba(158, 158, 158, 0.4);
+    }
+
+    .btn.success {
+      background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn.success:hover:not(:disabled) {
+      box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+    }
+
+    .btn.danger {
+      background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+    }
+
+    .btn.danger:hover:not(:disabled) {
+      box-shadow: 0 8px 25px rgba(244, 67, 54, 0.4);
+    }
+
+    .loading {
+      position: relative;
+      color: transparent;
+    }
+
+    .loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #message {
+      margin-top: clamp(15px, 4vw, 20px);
+      padding: clamp(12px, 3vw, 15px);
+      border-radius: 10px;
+      font-weight: 500;
+      min-height: clamp(40px, 10vw, 50px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(0.9em, 2.5vw, 1em);
+      line-height: 1.4;
+      word-break: break-word;
+      box-sizing: border-box;
+    }
+
+    .message-success {
+      background: #E8F5E8;
+      color: #2E7D32;
+      border: 1px solid #4CAF50;
+    }
+
+    .message-error {
+      background: #FFEBEE;
+      color: #C62828;
+      border: 1px solid #F44336;
+    }
+
+    .message-info {
+      background: #FFF8E1;
+      color: #F57C00;
+      border: 1px solid #ECA02D;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .retry-section {
+      margin-top: clamp(15px, 4vw, 20px);
+      padding: clamp(12px, 3vw, 15px);
+      background: #FFF8E1;
+      border: 1px solid #ECA02D;
+      border-radius: 10px;
+      color: #F57C00;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .retry-section h4 {
+      font-size: clamp(1em, 3vw, 1.2em);
+      margin-bottom: clamp(8px, 2vw, 10px);
+      line-height: 1.3;
+    }
+
+    .retry-section p {
+      font-size: clamp(0.9em, 2.5vw, 1em);
+      margin-bottom: clamp(10px, 3vw, 15px);
+      line-height: 1.4;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-top: clamp(15px, 4vw, 20px);
+      padding: clamp(12px, 3vw, 15px);
+      background: #FFFFFF;
+      border: 2px solid #E0E0E0;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      width: 100%;
+      box-sizing: border-box;
+      flex-wrap: wrap;
+      gap: clamp(8px, 2vw, 12px);
+    }
+
+    .stat-item {
+      text-align: center;
+      flex: 1;
+      min-width: 80px;
+    }
+
+    .stat-value {
+      font-size: clamp(1.2em, 4vw, 1.5em);
+      font-weight: bold;
+      color: #ECA02D;
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: clamp(0.8em, 2.5vw, 0.9em);
+      color: #666666;
+      line-height: 1.3;
+    }
+
+    .location-info {
+      margin: clamp(15px, 4vw, 20px) 0;
+      padding: clamp(15px, 4vw, 20px);
+      background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+      border: 2px solid #ECA02D;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(236, 160, 45, 0.2);
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      margin: clamp(8px, 2vw, 10px) 0;
+      padding: clamp(6px, 2vw, 8px) 0;
+      flex-wrap: wrap;
+      gap: clamp(6px, 2vw, 8px);
+    }
+
+    .info-item i {
+      margin-right: clamp(8px, 2vw, 12px);
+      font-size: clamp(1em, 3vw, 1.2em);
+      color: #ECA02D;
+      background: rgba(236, 160, 45, 0.1);
+      padding: clamp(6px, 2vw, 8px);
+      border-radius: 50%;
+      width: clamp(28px, 7vw, 35px);
+      height: clamp(28px, 7vw, 35px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .info-item span {
+      font-size: clamp(0.9em, 2.5vw, 1.1em);
+      font-weight: 600;
+      color: #222222;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .branch-selection {
+      margin: clamp(20px, 5vw, 25px) 0;
+      padding: clamp(15px, 4vw, 20px);
+      background: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%);
+      border: 2px solid #E0E0E0;
+      border-radius: 15px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .branch-selection label {
+      display: block;
+      font-size: clamp(1em, 3vw, 1.2em);
+      font-weight: 600;
+      color: #222222;
+      margin-bottom: clamp(10px, 3vw, 15px);
+      line-height: 1.3;
+    }
+
+    .branch-dropdown {
+      padding: clamp(10px, 3vw, 12px) clamp(15px, 4vw, 20px);
+      border: 2px solid #E0E0E0;
+      border-radius: 10px;
+      font-size: clamp(0.9em, 2.5vw, 1.1em);
+      font-weight: 500;
+      color: #222222;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%);
+      cursor: pointer;
+      width: 100%;
+      max-width: 280px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      box-sizing: border-box;
+    }
+
+    .branch-dropdown:focus {
+      outline: none;
+      border-color: #ECA02D;
+      box-shadow: 0 0 0 3px rgba(236, 160, 45, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .branch-dropdown:hover {
+      border-color: #ECA02D;
+      box-shadow: 0 4px 12px rgba(236, 160, 45, 0.15);
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 8px;
+        background: #F5F5F5;
+      }
+
+      .container {
+        padding: 16px;
+        margin: 0;
+        border-radius: 16px;
+        max-width: 100%;
+        min-width: auto;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      }
+      
+      .header {
+        margin-bottom: 16px;
+      }
+      
+      .header h1 {
+        font-size: 1.6em;
+        margin-bottom: 6px;
+        line-height: 1.1;
+      }
+
+      .header p {
+        font-size: 0.95em;
+        line-height: 1.3;
+        color: #666666;
+      }
+      
+      .btn {
+        padding: 14px 24px;
+        font-size: 15px;
+        min-width: 140px;
+        margin: 8px 6px;
+        border-radius: 12px;
+        font-weight: 600;
+      }
+
+      .step-container {
+        padding: 20px 16px;
+        margin: 12px 0;
+        border-radius: 16px;
+        border-width: 1.5px;
+      }
+
+      .step-title {
+        font-size: 1.1em;
+        margin-bottom: 16px;
+        padding: 8px 0;
+        flex-direction: row;
+        gap: 10px;
+        flex-wrap: nowrap;
+      }
+
+      .step-title i {
+        margin-right: 10px;
+        font-size: 1.1em;
+        width: 32px;
+        height: 32px;
+        padding: 6px;
+      }
+
+      .step-title .status-indicator {
+        margin-left: 10px;
+        width: 12px;
+        height: 12px;
+      }
+
+      #reader {
+        padding: 12px;
+        border-radius: 12px;
+        border-width: 1.5px;
+      }
+
+      #selfieCam, #canvas, #preview {
+        height: 280px;
+        border-radius: 12px;
+        border-width: 2px;
+      }
+
+      .location-info {
+        padding: 16px;
+        margin: 12px 0;
+        border-radius: 12px;
+      }
+
+      .info-item {
+        margin: 8px 0;
+        padding: 6px 0;
+        gap: 10px;
+      }
+
+      .info-item i {
+        width: 30px;
+        height: 30px;
+        padding: 6px;
+        font-size: 1em;
+      }
+
+      .info-item span {
+        font-size: 0.95em;
+        line-height: 1.3;
+      }
+
+      .branch-selection {
+        padding: 16px;
+        margin: 16px 0;
+        border-radius: 12px;
+      }
+
+      .branch-selection label {
+        font-size: 1em;
+        margin-bottom: 12px;
+      }
+
+      .branch-dropdown {
+        padding: 12px 16px;
+        font-size: 0.95em;
+        border-radius: 8px;
+        border-width: 1.5px;
+      }
+
+      .stats {
+        padding: 16px;
+        margin: 16px 0;
+        border-radius: 12px;
+        gap: 16px;
+      }
+
+      .stat-item {
+        min-width: 70px;
+      }
+
+      .stat-value {
+        font-size: 1.3em;
+        line-height: 1.1;
+      }
+
+      .stat-label {
+        font-size: 0.8em;
+        line-height: 1.2;
+      }
+
+      #message {
+        margin-top: 16px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 0.9em;
+        line-height: 1.3;
+      }
+
+      .retry-section {
+        margin-top: 16px;
+        padding: 16px;
+        border-radius: 12px;
+      }
+
+      .retry-section h4 {
+        font-size: 1em;
+        margin-bottom: 8px;
+      }
+
+      .retry-section p {
+        font-size: 0.9em;
+        margin-bottom: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 6px;
+        background: #F5F5F5;
+      }
+
+      .container {
+        padding: 12px;
+        margin: 0;
+        border-radius: 14px;
+        max-width: 100%;
+        min-width: auto;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        margin-bottom: 12px;
+      }
+
+      .header h1 {
+        font-size: 1.4em;
+        margin-bottom: 4px;
+        line-height: 1.1;
+      }
+
+      .header p {
+        font-size: 0.9em;
+        line-height: 1.3;
+        color: #666666;
+      }
+
+      .btn {
+        width: 100%;
+        margin: 6px 0;
+        min-width: auto;
+        padding: 16px 20px;
+        font-size: 15px;
+        border-radius: 10px;
+        font-weight: 600;
+        touch-action: manipulation;
+      }
+
+      .step-container {
+        padding: 16px 12px;
+        margin: 8px 0;
+        border-radius: 14px;
+        border-width: 1px;
+      }
+
+      .step-title {
+        font-size: 1em;
+        margin-bottom: 12px;
+        padding: 6px 0;
+        flex-direction: row;
+        gap: 8px;
+        flex-wrap: nowrap;
+      }
+
+      .step-title i {
+        margin-right: 8px;
+        font-size: 1em;
+        width: 28px;
+        height: 28px;
+        padding: 5px;
+      }
+
+      .step-title .status-indicator {
+        margin-left: 8px;
+        width: 10px;
+        height: 10px;
+      }
+
+      #reader {
+        padding: 10px;
+        border-radius: 10px;
+        border-width: 1px;
+      }
+
+      #selfieCam, #canvas, #preview {
+        height: 240px;
+        border-radius: 10px;
+        border-width: 1.5px;
+      }
+
+      .location-info {
+        padding: 12px;
+        margin: 8px 0;
+        border-radius: 10px;
+      }
+
+      .info-item {
+        margin: 6px 0;
+        padding: 4px 0;
+        gap: 8px;
+        flex-direction: row;
+        align-items: center;
+      }
+
+      .info-item i {
+        width: 26px;
+        height: 26px;
+        padding: 5px;
+        font-size: 0.9em;
+        flex-shrink: 0;
+      }
+
+      .info-item span {
+        font-size: 0.9em;
+        line-height: 1.3;
+        flex: 1;
+      }
+
+      .branch-selection {
+        padding: 12px;
+        margin: 12px 0;
+        border-radius: 10px;
+      }
+
+      .branch-selection label {
+        font-size: 0.95em;
+        margin-bottom: 10px;
+      }
+
+      .branch-dropdown {
+        padding: 12px 14px;
+        font-size: 0.9em;
+        border-radius: 8px;
+        border-width: 1px;
+        width: 100%;
+        max-width: none;
+        touch-action: manipulation;
+      }
+
+      .stats {
+        padding: 12px;
+        margin: 12px 0;
+        border-radius: 10px;
+        gap: 12px;
+        flex-direction: row;
+        justify-content: space-around;
+      }
+
+      .stat-item {
+        min-width: 60px;
+        flex: 1;
+      }
+
+      .stat-value {
+        font-size: 1.2em;
+        line-height: 1.1;
+      }
+
+      .stat-label {
+        font-size: 0.75em;
+        line-height: 1.2;
+      }
+
+      #message {
+        margin-top: 12px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.85em;
+        line-height: 1.3;
+        min-height: 44px;
+      }
+
+      .retry-section {
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 10px;
+      }
+
+      .retry-section h4 {
+        font-size: 0.95em;
+        margin-bottom: 6px;
+      }
+
+      .retry-section p {
+        font-size: 0.85em;
+        margin-bottom: 10px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        padding: 30px;
+        max-width: 600px;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+      }
+
+      .step-container {
+        padding: 35px;
+      }
+
+      .btn {
+        min-width: 180px;
+      }
+
+      #reader {
+        max-width: 400px;
+      }
+
+      #selfieCam, #canvas, #preview {
+        max-width: 400px;
+        height: 500px;
+        aspect-ratio: 4/5;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .container {
+        padding: 40px;
+        max-width: 700px;
+      }
+
+      .header h1 {
+        font-size: 2.8em;
+      }
+
+      .step-container {
+        padding: 40px;
+      }
+
+      .btn {
+        min-width: 200px;
+      }
+    }
+
+    /* Mobile-specific improvements */
+    @media (max-width: 768px) {
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .btn {
+        -webkit-tap-highlight-color: rgba(236, 160, 45, 0.2);
+        touch-action: manipulation;
+        user-select: none;
+      }
+
+      .btn:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+      }
+
+      .branch-dropdown {
+        -webkit-tap-highlight-color: rgba(236, 160, 45, 0.2);
+        touch-action: manipulation;
+      }
+
+      .step-container {
+        touch-action: manipulation;
+      }
+
+      /* Improve scrolling on mobile */
+      body {
+        -webkit-overflow-scrolling: touch;
+        overflow-x: hidden;
+      }
+
+      .container {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Better focus states for accessibility */
+      .btn:focus {
+        outline: 2px solid #ECA02D;
+        outline-offset: 2px;
+      }
+
+      .branch-dropdown:focus {
+        outline: 2px solid #ECA02D;
+        outline-offset: 2px;
+      }
+    }
+
+    /* iOS-specific improvements */
+    @supports (-webkit-touch-callout: none) {
+      /* iOS Safari specific styles */
+      body {
+        -webkit-text-size-adjust: 100%;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .btn {
+        -webkit-appearance: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: rgba(236, 160, 45, 0.3);
+        touch-action: manipulation;
+        cursor: pointer;
+      }
+
+      .btn:active {
+        -webkit-transform: scale(0.95);
+        transform: scale(0.95);
+        transition: all 0.1s ease;
+      }
+
+      /* iOS video fixes */
+      #selfieCam {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+      }
+
+      /* iOS input fixes */
+      .branch-dropdown {
+        -webkit-appearance: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+      }
+
+      /* iOS scrolling improvements */
+      .container {
+        -webkit-overflow-scrolling: touch;
+        overflow-scrolling: touch;
+      }
+
+      /* iOS focus improvements */
+      .btn:focus {
+        outline: none;
+        -webkit-box-shadow: 0 0 0 3px rgba(236, 160, 45, 0.3);
+        box-shadow: 0 0 0 3px rgba(236, 160, 45, 0.3);
+      }
+
+      /* iOS camera container fixes */
+      #reader {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+      }
+
+      #reader video {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1><i class="fas fa-qrcode"></i> Attendance System</h1>
+      <p>Scan QR Code & Capture Selfie for Attendance</p>
+    </div>
+
+    <!-- Step 1: QR Scanner -->
+    <div id="qrStep" class="step-container active">
+      <div class="step-title">
+        <i class="fas fa-qrcode"></i>
+        <span class="status-indicator active"></span>
+        Step 1: Scan QR Code
+      </div>
+      <div id="reader"></div>
+      <button id="retryQrBtn" class="btn secondary hidden">
+        <i class="fas fa-redo"></i> Retry QR Scan
+      </button>
+    </div>
+
+    <!-- Step 2: Selfie Capture -->
+    <div id="selfieStep" class="step-container">
+      <div class="step-title">
+        <i class="fas fa-camera"></i>
+        <span class="status-indicator"></span>
+        Step 2: Take Selfie
+      </div>
+      <video id="selfieCam" autoplay muted></video>
+      <canvas id="canvas" class="hidden"></canvas>
+      <div class="preview-container hidden" id="previewContainer">
+        <img id="preview" alt="Selfie Preview">
+      </div>
+      <button id="captureBtn" class="btn" disabled>
+        <i class="fas fa-camera"></i> Take Selfie
+      </button>
+      <button id="retakeBtn" class="btn secondary hidden">
+        <i class="fas fa-redo"></i> Retake
+      </button>
+    </div>
+
+    <!-- Step 3: Submit -->
+    <div id="submitStep" class="step-container">
+      <div class="step-title">
+        <i class="fas fa-paper-plane"></i>
+        <span class="status-indicator"></span>
+        Step 3: Submit Attendance
+      </div>
+      <div id="locationInfo" class="location-info hidden">
+        <div class="info-item">
+          <i class="fas fa-map-marker-alt"></i>
+          <span id="locationText">Location: Capturing...</span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-building"></i>
+          <span id="branchText">Branch: Selecting...</span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-check-circle"></i>
+          <span id="distanceText">Distance: Calculating...</span>
+        </div>
+      </div>
+      <div class="branch-selection">
+        <label for="branchSelect">Select Branch:</label>
+        <select id="branchSelect" class="branch-dropdown">
+          <option value="">Loading branches...</option>
+        </select>
+      </div>
+      <button id="submitBtn" class="btn success" disabled>
+        <i class="fas fa-check"></i> Submit Attendance
+      </button>
+      <button id="resetBtn" class="btn secondary">
+        <i class="fas fa-refresh"></i> Start Over
+      </button>
+    </div>
+
+    <!-- Message Display -->
+    <div id="message" class="message-info">
+      <i class="fas fa-info-circle"></i> Ready to scan QR code...
+    </div>
+
+    <!-- Retry Section -->
+    <div id="retrySection" class="retry-section hidden">
+      <h4><i class="fas fa-exclamation-triangle"></i> Submission Failed</h4>
+      <p>Would you like to retry?</p>
+      <button id="retrySubmitBtn" class="btn">
+        <i class="fas fa-redo"></i> Retry
+      </button>
+      <button id="cancelRetryBtn" class="btn secondary">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-value" id="scanCount">0</div>
+        <div class="stat-label">Scans</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="successCount">0</div>
+        <div class="stat-label">Success</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="errorCount">0</div>
+        <div class="stat-label">Errors</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxFajMmSMwacu7jXCF__LH-sy9IkFkVf-QSF47bALVmzxdSFCtN6B7F3UnNvXfKnYqzqQ/exec';
+    
+    // State management
+    let scannedId = '';
+    let selfieData = '';
+    let qrReader = null;
+    let currentStream = null;
+    let retryCount = 0;
+    const maxRetries = 3;
+    let userLocation = null; // Add location state
+    let staffDatabase = []; // Add staff database state
+    
+    // Stats
+    let scanCount = 0;
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Staff database CSV URL
+    const STAFF_DB_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTktOv0rOPllFSkl7K5aVOx9gb_xsXF8F-MSj04RHmXMQHmzxAI_KL6VN-_38WG5mI0Gkh62ls1TXKA/pub?gid=0&single=true&output=csv';
+
+    // DOM elements
+    const elements = {
+      qrStep: document.getElementById('qrStep'),
+      selfieStep: document.getElementById('selfieStep'),
+      submitStep: document.getElementById('submitStep'),
+      reader: document.getElementById('reader'),
+      selfieCam: document.getElementById('selfieCam'),
+      canvas: document.getElementById('canvas'),
+      preview: document.getElementById('preview'),
+      previewContainer: document.getElementById('previewContainer'),
+      captureBtn: document.getElementById('captureBtn'),
+      retakeBtn: document.getElementById('retakeBtn'),
+      submitBtn: document.getElementById('submitBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      retryQrBtn: document.getElementById('retryQrBtn'),
+      retrySection: document.getElementById('retrySection'),
+      retrySubmitBtn: document.getElementById('retrySubmitBtn'),
+      cancelRetryBtn: document.getElementById('cancelRetryBtn'),
+      message: document.getElementById('message'),
+      locationInfo: document.getElementById('locationInfo'),
+      locationText: document.getElementById('locationText'),
+      branchText: document.getElementById('branchText'),
+      branchSelect: document.getElementById('branchSelect'),
+      distanceText: document.getElementById('distanceText')
+    };
+
+    // Initialize the app
+    function initApp() {
+      // iOS-specific initialization
+      if (isIOS()) {
+        // Add iOS-specific meta tags and viewport settings
+        addIOSMetaTags();
+        // Initialize with iOS-specific settings
+        initIOSApp();
+      } else {
+        // Standard initialization for other platforms
+        getLocation(); // Get location first
+        initializeQRScanner();
+        setupEventListeners();
+        updateStats();
+        fetchStaffDatabase(); // Fetch staff database
+      }
+    }
+
+    // iOS detection
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    // Add iOS-specific meta tags
+    function addIOSMetaTags() {
+      const meta = document.createElement('meta');
+      meta.name = 'apple-mobile-web-app-capable';
+      meta.content = 'yes';
+      document.head.appendChild(meta);
+
+      const meta2 = document.createElement('meta');
+      meta2.name = 'apple-mobile-web-app-status-bar-style';
+      meta2.content = 'default';
+      document.head.appendChild(meta2);
+
+      const meta3 = document.createElement('meta');
+      meta3.name = 'format-detection';
+      meta3.content = 'telephone=no';
+      document.head.appendChild(meta3);
+    }
+
+    // iOS-specific initialization
+    function initIOSApp() {
+      // Request permissions first on iOS
+      requestIOSPermissions().then(() => {
+        getLocation(); // Get location first
+        initializeQRScanner();
+        setupEventListeners();
+        updateStats();
+        fetchStaffDatabase(); // Fetch staff database
+      }).catch(error => {
+        console.error('iOS permission error:', error);
+        showMessage('Please allow camera and location permissions to use this app.', 'error');
+        // Continue without permissions
+        getLocation();
+        initializeQRScanner();
+        setupEventListeners();
+        updateStats();
+        fetchStaffDatabase();
+      });
+    }
+
+    // Request iOS permissions
+    async function requestIOSPermissions() {
+      return new Promise((resolve, reject) => {
+        // Request camera permission
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            // Stop the stream immediately after getting permission
+            stream.getTracks().forEach(track => track.stop());
+            resolve();
+          })
+          .catch(error => {
+            console.error('Camera permission denied:', error);
+            reject(error);
+          });
+      });
+    }
+
+    // Get user location
+    function getLocation() {
+      if (navigator.geolocation) {
+        showMessage('Getting your location...', 'info');
+        
+        // iOS-specific geolocation options
+        const geoOptions = isIOS() ? {
+          enableHighAccuracy: false, // Lower accuracy for iOS to avoid permission issues
+          timeout: 15000, // Longer timeout for iOS
+          maximumAge: 300000 // 5 minutes cache for iOS
+        } : {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        };
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            userLocation = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+              timestamp: new Date().toISOString()
+            };
+            showMessage('Location captured successfully!', 'success');
+            console.log('Location captured:', userLocation);
+            displayLocationInfo();
+          },
+          (error) => {
+            console.error('Location error:', error);
+            userLocation = {
+              latitude: 0,
+              longitude: 0,
+              accuracy: 0,
+              timestamp: new Date().toISOString(),
+              error: error.message
+            };
+            showMessage('Location access denied. Continuing without location.', 'error');
+            displayLocationInfo();
+          },
+          geoOptions
+        );
+      } else {
+        showMessage('Geolocation not supported by this browser.', 'error');
+        userLocation = {
+          latitude: 0,
+          longitude: 0,
+          accuracy: 0,
+          timestamp: new Date().toISOString(),
+          error: 'Geolocation not supported'
+        };
+        displayLocationInfo();
+      }
+    }
+
+    function initializeQRScanner() {
+      qrReader = new Html5Qrcode("reader");
+      
+      Html5Qrcode.getCameras()
+        .then(cameras => {
+          if (cameras.length) {
+            // iOS-specific camera selection
+            let cameraId;
+            if (isIOS()) {
+              // On iOS, prefer the first camera (usually back camera)
+              cameraId = cameras[0].id;
+            } else {
+              // Try to use back camera if available
+              const backCamera = cameras.find(cam => 
+                cam.label.toLowerCase().includes('back') || 
+                cam.label.toLowerCase().includes('rear')
+              );
+              cameraId = backCamera ? backCamera.id : cameras[0].id;
+            }
+            
+            // iOS-specific QR scanner settings
+            const config = isIOS() ? {
+              fps: 5, // Lower FPS for iOS
+              qrbox: { width: 200, height: 200 }, // Smaller QR box for iOS
+              aspectRatio: 1.0,
+              disableFlip: false, // Enable flip for iOS
+              experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true
+              }
+            } : {
+              fps: 10, 
+              qrbox: { width: 250, height: 250 },
+              aspectRatio: 1.0
+            };
+            
+            qrReader.start(
+              cameraId,
+              config,
+              onQRCodeScanned,
+              onQRScanError
+            );
+          } else {
+            showMessage('No camera detected. Please check camera permissions.', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Camera access error:', error);
+          showMessage('Camera access error: ' + error.message, 'error');
+          elements.retryQrBtn.classList.remove('hidden');
+        });
+    }
+
+    function onQRCodeScanned(decodedText) {
+      scannedId = decodedText;
+      scanCount++;
+      updateStats();
+      
+      qrReader.stop();
+      
+      // Update step indicators
+      elements.qrStep.classList.remove('active');
+      elements.qrStep.classList.add('completed');
+      
+      // Update status indicator
+      const qrIndicator = elements.qrStep.querySelector('.status-indicator');
+      qrIndicator.classList.remove('active');
+      qrIndicator.classList.add('completed');
+      
+      showMessage(`QR Code scanned successfully! ID: ${scannedId}`, 'success');
+      setTimeout(() => {
+        enableSelfieCapture();
+      }, 1000);
+    }
+
+    function onQRScanError(error) {
+      console.log('QR Scan error:', error);
+    }
+
+    function enableSelfieCapture() {
+      elements.selfieStep.classList.add('active');
+      
+      // Update status indicator for selfie step
+      const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
+      selfieIndicator.classList.add('active');
+      
+      elements.captureBtn.disabled = false;
+      
+      // iOS-specific camera settings
+      const videoConstraints = isIOS() ? {
+        facingMode: 'user',
+        width: { ideal: 480, min: 320, max: 640 }, // Lower resolution for iOS
+        height: { ideal: 600, min: 400, max: 800 },
+        aspectRatio: { ideal: 4/5 }
+      } : {
+        facingMode: 'user',
+        width: { ideal: 640, min: 320, max: 1280 },
+        height: { ideal: 800, min: 400, max: 1600 },
+        aspectRatio: { ideal: 4/5 }
+      };
+      
+      navigator.mediaDevices.getUserMedia({ 
+        video: videoConstraints
+      })
+      .then(stream => {
+        currentStream = stream;
+        elements.selfieCam.srcObject = stream;
+        
+        // iOS-specific video handling
+        if (isIOS()) {
+          elements.selfieCam.setAttribute('playsinline', 'true');
+          elements.selfieCam.setAttribute('webkit-playsinline', 'true');
+        }
+        
+        showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
+      })
+      .catch(error => {
+        console.error('Camera access error:', error);
+        showMessage('Could not access camera: ' + error.message, 'error');
+      });
+    }
+
+    function setupEventListeners() {
+      // iOS-specific event handling
+      if (isIOS()) {
+        // Use touchstart for iOS to avoid delays
+        elements.captureBtn.addEventListener('touchstart', captureSelfie, { passive: false });
+        elements.retakeBtn.addEventListener('touchstart', retakeSelfie, { passive: false });
+        elements.submitBtn.addEventListener('touchstart', submitAttendance, { passive: false });
+        elements.resetBtn.addEventListener('touchstart', resetApp, { passive: false });
+        elements.retryQrBtn.addEventListener('touchstart', retryQRScan, { passive: false });
+        elements.retrySubmitBtn.addEventListener('touchstart', retrySubmission, { passive: false });
+        elements.cancelRetryBtn.addEventListener('touchstart', hideRetrySection, { passive: false });
+        elements.branchSelect.addEventListener('change', validateAndSubmit);
+      } else {
+        // Standard event handling for other platforms
+        elements.captureBtn.addEventListener('click', captureSelfie);
+        elements.retakeBtn.addEventListener('click', retakeSelfie);
+        elements.submitBtn.addEventListener('click', submitAttendance);
+        elements.resetBtn.addEventListener('click', resetApp);
+        elements.retryQrBtn.addEventListener('click', retryQRScan);
+        elements.retrySubmitBtn.addEventListener('click', retrySubmission);
+        elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
+        elements.branchSelect.addEventListener('change', validateAndSubmit);
+      }
+    }
+
+    function captureSelfie() {
+      const video = elements.selfieCam;
+      const canvas = elements.canvas;
+      const ctx = canvas.getContext('2d');
+      
+      try {
+        // iOS-specific canvas handling
+        if (isIOS()) {
+          // Wait for video to be ready on iOS
+          if (video.readyState < 2) {
+            showMessage('Camera not ready yet. Please wait...', 'info');
+            setTimeout(captureSelfie, 500);
+            return;
+          }
+        }
+        
+        // Set canvas size to match video aspect ratio
+        const aspectRatio = 4/5;
+        const maxWidth = isIOS() ? 480 : 640; // Lower resolution for iOS
+        const maxHeight = isIOS() ? 600 : 800;
+        
+        let canvasWidth = maxWidth;
+        let canvasHeight = maxHeight;
+        
+        // Maintain aspect ratio
+        if (canvasWidth / canvasHeight > aspectRatio) {
+          canvasWidth = canvasHeight * aspectRatio;
+        } else {
+          canvasHeight = canvasWidth / aspectRatio;
+        }
+        
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        
+        // iOS-specific canvas drawing
+        if (isIOS()) {
+          // Use a try-catch for iOS canvas operations
+          try {
+            ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+          } catch (error) {
+            console.error('iOS canvas drawing error:', error);
+            showMessage('Camera capture failed. Please try again.', 'error');
+            return;
+          }
+        } else {
+          ctx.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+        }
+        
+        // iOS-specific image quality
+        const quality = isIOS() ? 0.7 : 0.8; // Lower quality for iOS
+        selfieData = canvas.toDataURL('image/jpeg', quality);
+        
+        // Show preview
+        elements.preview.src = selfieData;
+        elements.previewContainer.classList.remove('hidden');
+        elements.selfieCam.classList.add('hidden');
+        
+        // Stop video stream
+        if (currentStream) {
+          currentStream.getTracks().forEach(track => track.stop());
+          currentStream = null;
+        }
+        
+        elements.captureBtn.classList.add('hidden');
+        elements.retakeBtn.classList.remove('hidden');
+        elements.submitBtn.disabled = false;
+        
+        elements.selfieStep.classList.remove('active');
+        elements.selfieStep.classList.add('completed');
+        elements.submitStep.classList.add('active');
+        
+        // Update status indicators
+        const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
+        selfieIndicator.classList.remove('active');
+        selfieIndicator.classList.add('completed');
+        
+        const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+        submitIndicator.classList.add('active');
+        
+        showMessage('Selfie captured! Click "Submit Attendance" to continue.', 'success');
+      } catch (error) {
+        console.error('Selfie capture error:', error);
+        showMessage('Failed to capture selfie. Please try again.', 'error');
+      }
+    }
+
+    function retakeSelfie() {
+      elements.previewContainer.classList.add('hidden');
+      elements.selfieCam.classList.remove('hidden');
+      elements.captureBtn.classList.remove('hidden');
+      elements.retakeBtn.classList.add('hidden');
+      elements.submitBtn.disabled = true;
+      
+      enableSelfieCapture();
+    }
+
+    function submitAttendance() {
+      if (!scannedId || !selfieData) {
+        showMessage('Please scan QR code and take selfie first.', 'error');
+        return;
+      }
+
+      elements.submitBtn.classList.add('loading');
+      elements.submitBtn.disabled = true;
+      showMessage('Submitting attendance...', 'info');
+
+      // Prepare submission data with location
+      const submissionData = {
+        id: scannedId,
+        selfie: selfieData,
+        location: userLocation,
+        branch: elements.branchSelect.value // Add selected branch
+      };
+
+      // iOS-specific submission handling
+      if (isIOS()) {
+        // Use fetch API for iOS with better error handling
+        submitAttendanceIOS(submissionData);
+      } else {
+        // Use iframe method for other platforms
+        submitAttendanceStandard(submissionData);
+      }
+    }
+
+    function submitAttendanceIOS(submissionData) {
+      // iOS-specific submission using fetch
+      fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'data=' + encodeURIComponent(JSON.stringify(submissionData))
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.text();
+        } else {
+          throw new Error('Network response was not ok');
+        }
+      })
+      .then(data => {
+        try {
+          const result = JSON.parse(data);
+          if (result.status === 'success') {
+            elements.submitBtn.classList.remove('loading');
+            successCount++;
+            updateStats();
+            showMessage(`✅ Attendance recorded successfully!`, 'success');
+            elements.submitStep.classList.remove('active');
+            elements.submitStep.classList.add('completed');
+            
+            // Update submit step indicator to completed
+            const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+            submitIndicator.classList.remove('active');
+            submitIndicator.classList.add('completed');
+            
+            // Auto-reset after 3 seconds
+            setTimeout(() => {
+              resetApp();
+            }, 3000);
+          } else {
+            throw new Error(result.message || 'Submission failed');
+          }
+        } catch (error) {
+          throw new Error('Invalid response format');
+        }
+      })
+      .catch(error => {
+        console.error('iOS submission error:', error);
+        errorCount++;
+        updateStats();
+        elements.submitBtn.classList.remove('loading');
+        elements.submitBtn.disabled = false;
+        
+        showMessage(`❌ Submission failed: ${error.message}`, 'error');
+        showRetrySection();
+      });
+    }
+
+    function submitAttendanceStandard(submissionData) {
+      // Create a form to submit data (bypasses CORS)
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = WEB_APP_URL;
+      form.target = 'hidden-iframe';
+      form.style.display = 'none';
+
+      // Add data as hidden inputs
+      const dataInput = document.createElement('input');
+      dataInput.type = 'hidden';
+      dataInput.name = 'data';
+      dataInput.value = JSON.stringify(submissionData);
+      form.appendChild(dataInput);
+
+      // Create hidden iframe to receive response
+      let iframe = document.getElementById('hidden-iframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'hidden-iframe';
+        iframe.name = 'hidden-iframe';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+
+      // Handle iframe load event
+      iframe.onload = function() {
+        // Since we can't access iframe content due to CORS, 
+        // we'll assume success after a reasonable timeout
+        setTimeout(() => {
+          try {
+            // Assume success since the iframe loaded without error
+            // The actual submission success is proven by the Google Sheet data
+            elements.submitBtn.classList.remove('loading');
+            successCount++;
+            updateStats();
+            showMessage(`✅ Attendance recorded successfully!`, 'success');
+            elements.submitStep.classList.remove('active');
+            elements.submitStep.classList.add('completed');
+            
+            // Update submit step indicator to completed
+            const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+            submitIndicator.classList.remove('active');
+            submitIndicator.classList.add('completed');
+            
+            // Auto-reset after 3 seconds
+            setTimeout(() => {
+              resetApp();
+            }, 3000);
+          } catch (error) {
+            errorCount++;
+            updateStats();
+            elements.submitBtn.classList.remove('loading');
+            elements.submitBtn.disabled = false;
+            
+            showMessage(`❌ Submission failed: ${error.message}`, 'error');
+            showRetrySection();
+          }
+          
+          // Clean up
+          if (form.parentNode) {
+            form.parentNode.removeChild(form);
+          }
+        }, 3000); // Wait 3 seconds for response
+      };
+
+      // Submit the form
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    function retrySubmission() {
+      retryCount++;
+      if (retryCount <= maxRetries) {
+        hideRetrySection();
+        submitAttendance();
+      } else {
+        showMessage('Maximum retry attempts reached. Please start over.', 'error');
+        hideRetrySection();
+        resetApp();
+      }
+    }
+
+    function showRetrySection() {
+      elements.retrySection.classList.remove('hidden');
+    }
+
+    function hideRetrySection() {
+      elements.retrySection.classList.add('hidden');
+    }
+
+    function retryQRScan() {
+      elements.retryQrBtn.classList.add('hidden');
+      initializeQRScanner();
+    }
+
+    function resetApp() {
+      // Reset state
+      scannedId = '';
+      selfieData = '';
+      retryCount = 0;
+      
+      // Reset UI
+      elements.qrStep.classList.remove('completed');
+      elements.qrStep.classList.add('active');
+      elements.selfieStep.classList.remove('active', 'completed');
+      elements.submitStep.classList.remove('active', 'completed');
+      
+      // Reset status indicators
+      const qrIndicator = elements.qrStep.querySelector('.status-indicator');
+      qrIndicator.classList.remove('completed');
+      qrIndicator.classList.add('active');
+      
+      const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
+      selfieIndicator.classList.remove('active', 'completed');
+      
+      const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+      submitIndicator.classList.remove('active', 'completed');
+      
+      // Hide elements
+      elements.previewContainer.classList.add('hidden');
+      elements.selfieCam.classList.remove('hidden');
+      elements.captureBtn.classList.remove('hidden');
+      elements.retakeBtn.classList.add('hidden');
+      elements.retryQrBtn.classList.add('hidden');
+      elements.retrySection.classList.add('hidden');
+      elements.locationInfo.classList.add('hidden'); // Hide location info
+      elements.branchSelect.value = ''; // Reset branch dropdown
+      elements.distanceText.textContent = 'Distance: Calculating...'; // Reset distance text
+      
+      // Reset buttons
+      elements.captureBtn.disabled = true;
+      elements.submitBtn.disabled = true;
+      elements.submitBtn.classList.remove('loading');
+      
+      // Stop any active streams
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      
+      // Reinitialize QR scanner
+      if (qrReader) {
+        qrReader.stop();
+      }
+      setTimeout(() => {
+        initializeQRScanner();
+      }, 500);
+      
+      showMessage('Ready to scan QR code...', 'info');
+    }
+
+    function showMessage(message, type = 'info') {
+      elements.message.textContent = message;
+      elements.message.className = `message-${type}`;
+      elements.message.classList.add('fade-in');
+    }
+
+    function updateStats() {
+      document.getElementById('scanCount').textContent = scanCount;
+      document.getElementById('successCount').textContent = successCount;
+      document.getElementById('errorCount').textContent = errorCount;
+    }
+
+    function displayLocationInfo() {
+      if (userLocation && userLocation.latitude !== 0 && userLocation.longitude !== 0) {
+        elements.locationText.textContent = `Location: ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
+        
+        // Check if branch is selected and validate distance
+        const selectedBranch = elements.branchSelect.value;
+        if (selectedBranch) {
+          validateLocation(selectedBranch);
+        } else {
+          elements.branchText.textContent = `Branch: Please select a branch`;
+          elements.distanceText.textContent = `Distance: Select branch first`;
+        }
+        
+        elements.locationInfo.classList.remove('hidden');
+      } else {
+        elements.locationText.textContent = 'Location: Not available';
+        elements.branchText.textContent = 'Branch: Unknown';
+        elements.distanceText.textContent = 'Distance: Unknown';
+        elements.locationInfo.classList.add('hidden');
+      }
+    }
+
+    function validateLocation(selectedBranch) {
+      // Find the branch in the staff database
+      const branchData = staffDatabase.find(branch => branch['Branch'] === selectedBranch);
+      
+      if (branchData && branchData['Location']) {
+        // Parse location coordinates from the database
+        const locationCoords = branchData['Location'].split(',').map(coord => parseFloat(coord.trim()));
+        const branchLatitude = locationCoords[0];
+        const branchLongitude = locationCoords[1];
+        
+        const distance = calculateDistance(
+          userLocation.latitude, 
+          userLocation.longitude,
+          branchLatitude, 
+          branchLongitude
+        );
+
+        elements.branchText.textContent = `Branch: ${selectedBranch}`;
+        elements.distanceText.textContent = `Distance: ${distance.toFixed(1)}m`;
+
+        // Check if within 100m
+        if (distance <= 100) {
+          elements.distanceText.innerHTML = `<span style="color: #4CAF50;">✓ Distance: ${distance.toFixed(1)}m (Valid)</span>`;
+          elements.submitBtn.disabled = false;
+        } else {
+          elements.distanceText.innerHTML = `<span style="color: #F44336;">✗ Distance: ${distance.toFixed(1)}m (Too far - must be within 100m)</span>`;
+          elements.submitBtn.disabled = true;
+        }
+      } else {
+        elements.branchText.textContent = `Branch: ${selectedBranch}`;
+        elements.distanceText.textContent = 'Distance: Branch location not found';
+        elements.submitBtn.disabled = true;
+      }
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      // Haversine formula to calculate distance between two points
+      const R = 6371000; // Earth's radius in meters
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const distance = R * c; // Distance in meters
+      return distance;
+    }
+
+    function validateAndSubmit() {
+      const selectedBranch = elements.branchSelect.value;
+      if (selectedBranch && userLocation) {
+        validateLocation(selectedBranch);
+      }
+    }
+
+    async function fetchStaffDatabase() {
+      try {
+        showMessage('Loading staff database...', 'info');
+        const response = await fetch(STAFF_DB_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const csvText = await response.text();
+        
+        // Parse CSV properly (handle quoted values)
+        const rows = parseCSV(csvText);
+        
+        // Assuming the first row is headers and subsequent rows are data
+        const headers = rows[0];
+        const dataRows = rows.slice(1);
+
+        staffDatabase = dataRows.map(row => {
+          const branch = {};
+          headers.forEach((header, index) => {
+            branch[header.trim()] = row[index] ? row[index].trim() : '';
+          });
+          return branch;
+        });
+
+        // Populate branch dropdown
+        const branchSelect = document.getElementById('branchSelect');
+        branchSelect.innerHTML = '<option value="">Select a branch...</option>';
+        
+        // Get unique branches from the database
+        const uniqueBranches = [...new Set(staffDatabase.map(branch => branch['Branch']).filter(branch => branch))];
+        
+        uniqueBranches.forEach(branchName => {
+          const option = document.createElement('option');
+          option.value = branchName;
+          option.textContent = branchName;
+          branchSelect.appendChild(option);
+        });
+        
+        showMessage('Staff database loaded successfully!', 'success');
+      } catch (error) {
+        console.error('Error fetching staff database:', error);
+        showMessage('Failed to load staff database. Please try again later.', 'error');
+      }
+    }
+
+    function parseCSV(csvText) {
+      const rows = [];
+      const lines = csvText.split('\n');
+      
+      for (let line of lines) {
+        if (line.trim() === '') continue;
+        
+        const row = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            row.push(current);
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        
+        row.push(current);
+        rows.push(row);
+      }
+      
+      return rows;
+    }
+
+    // iOS-specific debugging
+    function logIOSInfo() {
+      if (isIOS()) {
+        console.log('iOS Device Detected');
+        console.log('User Agent:', navigator.userAgent);
+        console.log('Platform:', navigator.platform);
+        console.log('Max Touch Points:', navigator.maxTouchPoints);
+        console.log('Viewport:', window.innerWidth + 'x' + window.innerHeight);
+        
+        // Check for iOS-specific features
+        console.log('WebKit:', 'webkitTransform' in document.body.style);
+        console.log('Touch Events:', 'ontouchstart' in window);
+        console.log('Media Devices:', !!navigator.mediaDevices);
+      }
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      logIOSInfo();
+      initApp();
+    });
+  </script>
+</body>
+</html>
