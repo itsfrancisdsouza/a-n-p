@@ -356,6 +356,35 @@
       color: #333;
     }
 
+    .branch-selection {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f7fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .branch-dropdown {
+      padding: 10px 15px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 1em;
+      color: #4a5568;
+      background-color: #fff;
+      cursor: pointer;
+      width: 250px;
+      max-width: 100%;
+    }
+
+    .branch-dropdown:focus {
+      outline: none;
+      border-color: #4299e1;
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+    }
+
     @media (max-width: 600px) {
       .container {
         padding: 20px;
@@ -427,8 +456,19 @@
         </div>
         <div class="info-item">
           <i class="fas fa-building"></i>
-          <span id="branchText">Branch: Determining...</span>
+          <span id="branchText">Branch: Selecting...</span>
         </div>
+        <div class="info-item">
+          <i class="fas fa-check-circle"></i>
+          <span id="distanceText">Distance: Calculating...</span>
+        </div>
+      </div>
+      <div class="branch-selection">
+        <label for="branchSelect">Select Branch:</label>
+        <select id="branchSelect" class="branch-dropdown">
+          <option value="">Select a branch...</option>
+          <option value="Shanuzz Academy">Shanuzz Academy</option>
+        </select>
       </div>
       <button id="submitBtn" class="btn success" disabled>
         <i class="fas fa-check"></i> Submit Attendance
@@ -510,7 +550,9 @@
       message: document.getElementById('message'),
       locationInfo: document.getElementById('locationInfo'),
       locationText: document.getElementById('locationText'),
-      branchText: document.getElementById('branchText')
+      branchText: document.getElementById('branchText'),
+      branchSelect: document.getElementById('branchSelect'),
+      distanceText: document.getElementById('distanceText')
     };
 
     // Initialize the app
@@ -650,6 +692,7 @@
       elements.retryQrBtn.addEventListener('click', retryQRScan);
       elements.retrySubmitBtn.addEventListener('click', retrySubmission);
       elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
+      elements.branchSelect.addEventListener('change', validateAndSubmit);
     }
 
     function captureSelfie() {
@@ -704,7 +747,8 @@
       const submissionData = {
         id: scannedId,
         selfie: selfieData,
-        location: userLocation
+        location: userLocation,
+        branch: elements.branchSelect.value // Add selected branch
       };
 
       // Create a form to submit data (bypasses CORS)
@@ -817,6 +861,8 @@
       elements.retryQrBtn.classList.add('hidden');
       elements.retrySection.classList.add('hidden');
       elements.locationInfo.classList.add('hidden'); // Hide location info
+      elements.branchSelect.value = ''; // Reset branch dropdown
+      elements.distanceText.textContent = 'Distance: Calculating...'; // Reset distance text
       
       // Reset buttons
       elements.captureBtn.disabled = true;
@@ -854,30 +900,80 @@
 
     function displayLocationInfo() {
       if (userLocation && userLocation.latitude !== 0 && userLocation.longitude !== 0) {
-        elements.locationText.textContent = `Location: ${userLocation.latitude.toFixed(4)}, ${userLocation.longitude.toFixed(4)}`;
+        elements.locationText.textContent = `Location: ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
         
-        // Determine branch based on location
-        const branch = determineBranch(userLocation.latitude, userLocation.longitude);
-        elements.branchText.textContent = `Branch: ${branch}`;
+        // Check if branch is selected and validate distance
+        const selectedBranch = elements.branchSelect.value;
+        if (selectedBranch) {
+          validateLocation(selectedBranch);
+        } else {
+          elements.branchText.textContent = `Branch: Please select a branch`;
+          elements.distanceText.textContent = `Distance: Select branch first`;
+        }
         
         elements.locationInfo.classList.remove('hidden');
       } else {
         elements.locationText.textContent = 'Location: Not available';
         elements.branchText.textContent = 'Branch: Unknown';
+        elements.distanceText.textContent = 'Distance: Unknown';
         elements.locationInfo.classList.add('hidden');
       }
     }
 
-    function determineBranch(latitude, longitude) {
-      // Same logic as in Apps Script
-      if (latitude >= 19.0 && latitude <= 19.3 && longitude >= 72.8 && longitude <= 73.0) {
-        return 'Mumbai Central';
-      } else if (latitude >= 18.9 && latitude <= 19.1 && longitude >= 72.8 && longitude <= 72.9) {
-        return 'Mumbai West';
-      } else if (latitude >= 19.1 && latitude <= 19.4 && longitude >= 72.8 && longitude <= 73.1) {
-        return 'Mumbai North';
+    function validateLocation(selectedBranch) {
+      // Branch coordinates (you can add more branches here)
+      const branchCoordinates = {
+        'Shanuzz Academy': {
+          latitude: 19.10718325858879,
+          longitude: 72.88286798538499
+        }
+      };
+
+      if (branchCoordinates[selectedBranch]) {
+        const branch = branchCoordinates[selectedBranch];
+        const distance = calculateDistance(
+          userLocation.latitude, 
+          userLocation.longitude,
+          branch.latitude, 
+          branch.longitude
+        );
+
+        elements.branchText.textContent = `Branch: ${selectedBranch}`;
+        elements.distanceText.textContent = `Distance: ${distance.toFixed(1)}m`;
+
+        // Check if within 100m
+        if (distance <= 100) {
+          elements.distanceText.innerHTML = `<span style="color: #48bb78;">✓ Distance: ${distance.toFixed(1)}m (Valid)</span>`;
+          elements.submitBtn.disabled = false;
+        } else {
+          elements.distanceText.innerHTML = `<span style="color: #f56565;">✗ Distance: ${distance.toFixed(1)}m (Too far - must be within 100m)</span>`;
+          elements.submitBtn.disabled = true;
+        }
       } else {
-        return 'Other Location';
+        elements.branchText.textContent = `Branch: ${selectedBranch}`;
+        elements.distanceText.textContent = 'Distance: Unknown branch';
+        elements.submitBtn.disabled = true;
+      }
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      // Haversine formula to calculate distance between two points
+      const R = 6371000; // Earth's radius in meters
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const distance = R * c; // Distance in meters
+      return distance;
+    }
+
+    function validateAndSubmit() {
+      const selectedBranch = elements.branchSelect.value;
+      if (selectedBranch && userLocation) {
+        validateLocation(selectedBranch);
       }
     }
 
