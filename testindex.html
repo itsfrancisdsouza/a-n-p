@@ -602,39 +602,7 @@
       line-height: 1.4;
     }
 
-    .stats {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 16px;
-      padding: 16px;
-      background: #FFFFFF;
-      border: 1px solid #E0E0E0;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-      width: 100%;
-      box-sizing: border-box;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
 
-    .stat-item {
-      text-align: center;
-      flex: 1;
-      min-width: 80px;
-    }
-
-    .stat-value {
-      font-size: clamp(1.2em, 4vw, 1.5em);
-      font-weight: bold;
-      color: #ECA02D;
-      line-height: 1.2;
-    }
-
-    .stat-label {
-      font-size: clamp(0.8em, 2.5vw, 0.9em);
-      color: #666666;
-      line-height: 1.3;
-    }
 
     .location-info {
       margin: 16px 0;
@@ -852,26 +820,7 @@
         border-width: 1.5px;
       }
 
-      .stats {
-        padding: 16px;
-        margin: 16px 0;
-        border-radius: 12px;
-        gap: 16px;
-      }
 
-      .stat-item {
-        min-width: 70px;
-      }
-
-      .stat-value {
-        font-size: 1.3em;
-        line-height: 1.1;
-      }
-
-      .stat-label {
-        font-size: 0.8em;
-        line-height: 1.2;
-      }
 
       #message {
         margin-top: 16px;
@@ -1050,10 +999,7 @@
         line-height: 1.1;
       }
 
-      .stat-label {
-        font-size: 0.75em;
-        line-height: 1.2;
-      }
+
 
       #message {
         margin-top: 12px;
@@ -1278,21 +1224,6 @@
       </button>
     </div>
 
-    <!-- Stats -->
-    <div class="stats">
-      <div class="stat-item">
-        <div class="stat-value" id="scanCount">0</div>
-        <div class="stat-label">Scans</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="successCount">0</div>
-        <div class="stat-label">Success</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-value" id="errorCount">0</div>
-        <div class="stat-label">Errors</div>
-      </div>
-    </div>
   </div>
 
   <!-- Success Popup Card -->
@@ -1337,10 +1268,7 @@
     let userLocation = null; // Add location state
     let staffDatabase = []; // Add staff database state
     
-    // Stats
-    let scanCount = 0;
-    let successCount = 0;
-    let errorCount = 0;
+
 
     // Staff database CSV URL
     const STAFF_DB_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTktOv0rOPllFSkl7K5aVOx9gb_xsXF8F-MSj04RHmXMQHmzxAI_KL6VN-_38WG5mI0Gkh62ls1TXKA/pub?gid=0&single=true&output=csv';
@@ -1386,7 +1314,6 @@
       
       initializeQRScanner();
       setupEventListeners();
-      updateStats();
       fetchStaffDatabase(); // Fetch staff database
     }
 
@@ -1499,8 +1426,6 @@
 
     function onQRCodeScanned(decodedText) {
       scannedId = decodedText;
-      scanCount++;
-      updateStats();
       
       qrReader.stop();
       
@@ -1743,8 +1668,6 @@
         clearTimeout(submissionTimeout);
         
         elements.submitBtn.classList.remove('loading');
-        successCount++;
-        updateStats();
         
         // Show success popup with attendance details
         showSuccessPopup(scannedId);
@@ -1772,8 +1695,6 @@
         clearTimeout(submissionTimeout);
         
         console.error('Form submission failed:', error);
-        errorCount++;
-        updateStats();
         elements.submitBtn.classList.remove('loading');
         elements.submitBtn.disabled = false;
         
@@ -1921,7 +1842,6 @@
       }
       
       // Try to find user by ID in the staff database
-      // Look for the name in column C (C2:C range) - this would be the 3rd column (index 2)
       const user = staffDatabase.find(staff => 
         staff['ID'] === userId || 
         staff['Employee ID'] === userId || 
@@ -1930,9 +1850,12 @@
       );
       
       if (user) {
-        // Get the name from column C (3rd column, index 2)
-        const columnNames = Object.keys(user);
-        const nameColumn = columnNames[2]; // C column (3rd column, 0-indexed)
+        // Use C2:C column for name (assuming C column contains names)
+        const nameColumn = Object.keys(user).find(key => 
+          key.includes('Name') || 
+          key === 'C2:C' || 
+          key === 'Name'
+        );
         
         return {
           name: user[nameColumn] || user['Name'] || user['Employee Name'] || user['Staff Name'] || 'Unknown',
@@ -1985,11 +1908,7 @@
       });
     });
 
-    function updateStats() {
-      document.getElementById('scanCount').textContent = scanCount;
-      document.getElementById('successCount').textContent = successCount;
-      document.getElementById('errorCount').textContent = errorCount;
-    }
+
 
     function displayLocationInfo() {
       if (userLocation && userLocation.latitude !== 0 && userLocation.longitude !== 0) {
