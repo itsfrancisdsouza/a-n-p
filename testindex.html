@@ -1582,7 +1582,9 @@
       elements.captureBtn.addEventListener('click', captureSelfie);
       elements.retakeBtn.addEventListener('click', retakeSelfie);
       elements.submitBtn.addEventListener('click', submitAttendance);
-      elements.resetBtn.addEventListener('click', resetApp);
+      elements.resetBtn.addEventListener('click', () => {
+        window.location.reload();
+      });
       elements.retryQrBtn.addEventListener('click', retryQRScan);
       elements.retrySubmitBtn.addEventListener('click', retrySubmission);
       elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
@@ -1919,16 +1921,21 @@
       }
       
       // Try to find user by ID in the staff database
+      // Look for the name in column C (C2:C range) - this would be the 3rd column (index 2)
       const user = staffDatabase.find(staff => 
-        staff['Staff ID'] === userId || 
         staff['ID'] === userId || 
-        staff['Employee ID'] === userId ||
+        staff['Employee ID'] === userId || 
+        staff['Staff ID'] === userId ||
         staff['id'] === userId
       );
       
       if (user) {
+        // Get the name from column C (3rd column, index 2)
+        const columnNames = Object.keys(user);
+        const nameColumn = columnNames[2]; // C column (3rd column, 0-indexed)
+        
         return {
-          name: user['Staff Name'] || user['Name'] || user['Employee Name'] || 'Unknown',
+          name: user[nameColumn] || user['Name'] || user['Employee Name'] || user['Staff Name'] || 'Unknown',
           id: userId
         };
       }
