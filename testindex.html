@@ -1843,6 +1843,7 @@
       
       // Try to find user by ID in the staff database
       const user = staffDatabase.find(staff => 
+        staff['staff-id'] === userId || 
         staff['ID'] === userId || 
         staff['Employee ID'] === userId || 
         staff['Staff ID'] === userId ||
@@ -1850,15 +1851,11 @@
       );
       
       if (user) {
-        // Use C2:C column for name (assuming C column contains names)
-        const nameColumn = Object.keys(user).find(key => 
-          key.includes('Name') || 
-          key === 'C2:C' || 
-          key === 'Name'
-        );
+        // Get name from the 'Name' column (Column C in your CSV)
+        const name = user['Name'] || 'Unknown';
         
         return {
-          name: user[nameColumn] || user['Name'] || user['Employee Name'] || user['Staff Name'] || 'Unknown',
+          name: name,
           id: userId
         };
       }
