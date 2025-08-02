@@ -419,6 +419,135 @@
       border-left: 4px solid #ECA02D;
     }
 
+    /* Success Popup Card Styles */
+    .success-popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    .success-popup-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+      padding: 32px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      position: relative;
+      animation: slideIn 0.4s ease-out;
+    }
+
+    .success-popup-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #4CAF50 0%, #45A049 100%);
+      border-radius: 16px 16px 0 0;
+    }
+
+    .success-icon {
+      font-size: 48px;
+      color: #4CAF50;
+      margin-bottom: 16px;
+      animation: bounce 0.6s ease-in;
+    }
+
+    .success-title {
+      font-size: 1.5em;
+      font-weight: 600;
+      color: #2E7D32;
+      margin-bottom: 24px;
+      line-height: 1.3;
+    }
+
+    .attendance-details {
+      background: #F8F9FA;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      border: 1px solid #E9ECEF;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #E9ECEF;
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .detail-label {
+      font-weight: 500;
+      color: #495057;
+      font-size: 0.95em;
+    }
+
+    .detail-value {
+      font-weight: 600;
+      color: #212529;
+      font-size: 0.95em;
+    }
+
+    .close-popup-btn {
+      background: linear-gradient(135deg, #4CAF50 0%, #45A049 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 16px;
+      box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    }
+
+    .close-popup-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-10px);
+      }
+      60% {
+        transform: translateY(-5px);
+      }
+    }
+
     .hidden {
       display: none !important;
     }
@@ -473,39 +602,7 @@
       line-height: 1.4;
     }
 
-    .stats {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 16px;
-      padding: 16px;
-      background: #FFFFFF;
-      border: 1px solid #E0E0E0;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-      width: 100%;
-      box-sizing: border-box;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
 
-    .stat-item {
-      text-align: center;
-      flex: 1;
-      min-width: 80px;
-    }
-
-    .stat-value {
-      font-size: clamp(1.2em, 4vw, 1.5em);
-      font-weight: bold;
-      color: #ECA02D;
-      line-height: 1.2;
-    }
-
-    .stat-label {
-      font-size: clamp(0.8em, 2.5vw, 0.9em);
-      color: #666666;
-      line-height: 1.3;
-    }
 
     .location-info {
       margin: 16px 0;
@@ -723,26 +820,7 @@
         border-width: 1.5px;
       }
 
-      .stats {
-        padding: 16px;
-        margin: 16px 0;
-        border-radius: 12px;
-        gap: 16px;
-      }
 
-      .stat-item {
-        min-width: 70px;
-      }
-
-      .stat-value {
-        font-size: 1.3em;
-        line-height: 1.1;
-      }
-
-      .stat-label {
-        font-size: 0.8em;
-        line-height: 1.2;
-      }
 
       #message {
         margin-top: 16px;
@@ -921,10 +999,7 @@
         line-height: 1.1;
       }
 
-      .stat-label {
-        font-size: 0.75em;
-        line-height: 1.2;
-      }
+
 
       #message {
         margin-top: 12px;
@@ -1149,20 +1224,34 @@
       </button>
     </div>
 
-    <!-- Stats -->
-    <div class="stats">
-      <div class="stat-item">
-        <div class="stat-value" id="scanCount">0</div>
-        <div class="stat-label">Scans</div>
+  </div>
+
+  <!-- Success Popup Card -->
+  <div id="successPopup" class="success-popup-overlay hidden">
+    <div class="success-popup-card">
+      <div class="success-icon">
+        <i class="fas fa-check-circle"></i>
       </div>
-      <div class="stat-item">
-        <div class="stat-value" id="successCount">0</div>
-        <div class="stat-label">Success</div>
+      <div class="success-title">
+        ✅ Attendance recorded successfully!
       </div>
-      <div class="stat-item">
-        <div class="stat-value" id="errorCount">0</div>
-        <div class="stat-label">Errors</div>
+      <div class="attendance-details">
+        <div class="detail-row">
+          <span class="detail-label">Name:</span>
+          <span class="detail-value" id="popupName">Loading...</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">ID:</span>
+          <span class="detail-value" id="popupId">Loading...</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Recorded Time:</span>
+          <span class="detail-value" id="popupTime">Loading...</span>
+        </div>
       </div>
+      <button class="close-popup-btn" onclick="closeSuccessPopup()">
+        <i class="fas fa-check"></i> OK
+      </button>
     </div>
   </div>
 
@@ -1179,10 +1268,7 @@
     let userLocation = null; // Add location state
     let staffDatabase = []; // Add staff database state
     
-    // Stats
-    let scanCount = 0;
-    let successCount = 0;
-    let errorCount = 0;
+
 
     // Staff database CSV URL
     const STAFF_DB_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTktOv0rOPllFSkl7K5aVOx9gb_xsXF8F-MSj04RHmXMQHmzxAI_KL6VN-_38WG5mI0Gkh62ls1TXKA/pub?gid=0&single=true&output=csv';
@@ -1228,7 +1314,6 @@
       
       initializeQRScanner();
       setupEventListeners();
-      updateStats();
       fetchStaffDatabase(); // Fetch staff database
     }
 
@@ -1341,8 +1426,6 @@
 
     function onQRCodeScanned(decodedText) {
       scannedId = decodedText;
-      scanCount++;
-      updateStats();
       
       qrReader.stop();
       
@@ -1424,7 +1507,9 @@
       elements.captureBtn.addEventListener('click', captureSelfie);
       elements.retakeBtn.addEventListener('click', retakeSelfie);
       elements.submitBtn.addEventListener('click', submitAttendance);
-      elements.resetBtn.addEventListener('click', resetApp);
+      elements.resetBtn.addEventListener('click', () => {
+        window.location.reload();
+      });
       elements.retryQrBtn.addEventListener('click', retryQRScan);
       elements.retrySubmitBtn.addEventListener('click', retrySubmission);
       elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
@@ -1583,9 +1668,10 @@
         clearTimeout(submissionTimeout);
         
         elements.submitBtn.classList.remove('loading');
-        successCount++;
-        updateStats();
-        showMessage(`✅ Attendance recorded successfully!`, 'success');
+        
+        // Show success popup with attendance details
+        showSuccessPopup(scannedId);
+        
         elements.submitStep.classList.remove('active');
         elements.submitStep.classList.add('completed');
         
@@ -1593,9 +1679,10 @@
         submitIndicator.classList.remove('active');
         submitIndicator.classList.add('completed');
         
-        setTimeout(() => {
-          resetApp();
-        }, 3000);
+        // Don't auto-reset, let user close popup first
+        // setTimeout(() => {
+        //   resetApp();
+        // }, 3000);
         
         // Clean up resources
         cleanupForm(form);
@@ -1608,8 +1695,6 @@
         clearTimeout(submissionTimeout);
         
         console.error('Form submission failed:', error);
-        errorCount++;
-        updateStats();
         elements.submitBtn.classList.remove('loading');
         elements.submitBtn.disabled = false;
         
@@ -1750,11 +1835,77 @@
       elements.message.classList.add('fade-in');
     }
 
-    function updateStats() {
-      document.getElementById('scanCount').textContent = scanCount;
-      document.getElementById('successCount').textContent = successCount;
-      document.getElementById('errorCount').textContent = errorCount;
+    // Function to get user information from staff database
+    function getUserInfo(userId) {
+      if (!staffDatabase || staffDatabase.length === 0) {
+        return { name: 'Unknown', id: userId };
+      }
+      
+      // Try to find user by ID in the staff database
+      const user = staffDatabase.find(staff => 
+        staff['staff-id'] === userId || 
+        staff['ID'] === userId || 
+        staff['Employee ID'] === userId || 
+        staff['Staff ID'] === userId ||
+        staff['id'] === userId
+      );
+      
+      if (user) {
+        // Get name from the 'Name' column (Column C in your CSV)
+        const name = user['Name'] || 'Unknown';
+        
+        return {
+          name: name,
+          id: userId
+        };
+      }
+      
+      return { name: 'Unknown', id: userId };
     }
+
+    // Function to show success popup with attendance details
+    function showSuccessPopup(userId) {
+      const userInfo = getUserInfo(userId);
+      const currentTime = new Date();
+      const formattedTime = currentTime.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+
+      // Update popup content
+      document.getElementById('popupName').textContent = userInfo.name;
+      document.getElementById('popupId').textContent = userInfo.id;
+      document.getElementById('popupTime').textContent = formattedTime;
+
+      // Show popup
+      document.getElementById('successPopup').classList.remove('hidden');
+    }
+
+    // Function to close success popup
+    function closeSuccessPopup() {
+      document.getElementById('successPopup').classList.add('hidden');
+      // Refresh the page after closing popup
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    }
+
+    // Add click handler to close popup when clicking outside
+    document.addEventListener('DOMContentLoaded', function() {
+      const successPopup = document.getElementById('successPopup');
+      successPopup.addEventListener('click', function(e) {
+        if (e.target === successPopup) {
+          closeSuccessPopup();
+        }
+      });
+    });
+
+
 
     function displayLocationInfo() {
       if (userLocation && userLocation.latitude !== 0 && userLocation.longitude !== 0) {
