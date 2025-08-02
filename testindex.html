@@ -1920,15 +1920,15 @@
       
       // Try to find user by ID in the staff database
       const user = staffDatabase.find(staff => 
+        staff['Staff ID'] === userId || 
         staff['ID'] === userId || 
-        staff['Employee ID'] === userId || 
-        staff['Staff ID'] === userId ||
+        staff['Employee ID'] === userId ||
         staff['id'] === userId
       );
       
       if (user) {
         return {
-          name: user['Name'] || user['Employee Name'] || user['Staff Name'] || 'Unknown',
+          name: user['Staff Name'] || user['Name'] || user['Employee Name'] || 'Unknown',
           id: userId
         };
       }
@@ -1962,9 +1962,9 @@
     // Function to close success popup
     function closeSuccessPopup() {
       document.getElementById('successPopup').classList.add('hidden');
-      // Reset the app after closing popup
+      // Refresh the page after closing popup
       setTimeout(() => {
-        resetApp();
+        window.location.reload();
       }, 500);
     }
 
