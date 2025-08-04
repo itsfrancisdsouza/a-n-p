@@ -1121,6 +1121,59 @@
         outline: 2px solid #ECA02D;
         outline-offset: 2px;
       }
+      
+      /* iOS-specific improvements */
+      @supports (-webkit-touch-callout: none) {
+        /* iOS Safari specific styles */
+        input[type="text"] {
+          -webkit-appearance: none;
+          border-radius: 8px;
+          font-size: 16px; /* Prevents zoom on iOS */
+        }
+        
+        #qrCodeInput {
+          -webkit-appearance: none;
+          border-radius: 8px;
+          font-size: 16px;
+          padding: 12px;
+          border: 1px solid #E0E0E0;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        
+        /* Prevent zoom on input focus */
+        input:focus {
+          font-size: 16px;
+        }
+        
+        /* Better touch targets for iOS */
+        .btn {
+          min-height: 44px; /* Apple's recommended minimum touch target */
+        }
+        
+        /* Improve camera viewport on iOS */
+        #reader video,
+        #selfieCam {
+          -webkit-transform: translateZ(0);
+          transform: translateZ(0);
+        }
+        
+        /* Fix for iOS Safari viewport issues */
+        body {
+          position: fixed;
+          width: 100%;
+          height: 100%;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        
+        .container {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+      }
     }
   </style>
 </head>
@@ -1142,6 +1195,19 @@
       <button id="retryQrBtn" class="btn secondary hidden">
         <i class="fas fa-redo"></i> Retry QR Scan
       </button>
+      <button id="manualQrBtn" class="btn secondary">
+        <i class="fas fa-keyboard"></i> Enter QR Code Manually
+      </button>
+      <div id="manualQrInput" class="hidden" style="margin-top: 15px;">
+        <input type="text" id="qrCodeInput" placeholder="Enter QR code here..." 
+               style="width: 100%; padding: 12px; border: 1px solid #E0E0E0; border-radius: 8px; font-size: 14px; margin-bottom: 10px;">
+        <button id="submitManualQr" class="btn">
+          <i class="fas fa-check"></i> Submit
+        </button>
+        <button id="cancelManualQr" class="btn secondary">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+      </div>
     </div>
 
     <!-- Step 2: Selfie Capture -->
@@ -1298,7 +1364,12 @@
       branchSelect: document.getElementById('branchSelect'),
       distanceText: document.getElementById('distanceText'),
       locationPermissionBtn: document.getElementById('locationPermissionBtn'),
-      requestLocationBtn: document.getElementById('requestLocationBtn')
+      requestLocationBtn: document.getElementById('requestLocationBtn'),
+      manualQrBtn: document.getElementById('manualQrBtn'),
+      manualQrInput: document.getElementById('manualQrInput'),
+      qrCodeInput: document.getElementById('qrCodeInput'),
+      submitManualQr: document.getElementById('submitManualQr'),
+      cancelManualQr: document.getElementById('cancelManualQr')
     };
 
     // Initialize the app
@@ -1394,6 +1465,13 @@
     function initializeQRScanner() {
       qrReader = new Html5Qrcode("reader");
       
+      // iOS-specific detection
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
+      if (isIOS) {
+        showMessage('iOS detected. Please allow camera access when prompted.', 'info');
+      }
+      
       Html5Qrcode.getCameras()
         .then(cameras => {
           if (cameras.length) {
@@ -1404,24 +1482,77 @@
             );
             const cameraId = backCamera ? backCamera.id : cameras[0].id;
             
+            // iOS-specific configuration
+            const config = {
+              fps: isIOS ? 5 : 10, // Lower FPS for iOS to prevent overheating
+              qrbox: { width: 250, height: 250 },
+              aspectRatio: 1.0
+            };
+            
+            // Add iOS-specific constraints
+            if (isIOS) {
+              config.experimentalFeatures = {
+                useBarCodeDetectorIfSupported: false // Disable for better iOS compatibility
+              };
+            }
+            
             qrReader.start(
               cameraId,
-              { 
-                fps: 10, 
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-              },
+              config,
               onQRCodeScanned,
               onQRScanError
-            );
+            ).then(() => {
+              showMessage('QR Scanner started. Point camera at QR code.', 'info');
+            }).catch(error => {
+              console.error('QR Scanner start error:', error);
+              handleQRScannerError(error, isIOS);
+            });
           } else {
             showMessage('No camera detected. Please check camera permissions.', 'error');
+            elements.retryQrBtn.classList.remove('hidden');
           }
         })
         .catch(error => {
-          showMessage('Camera access error: ' + error.message, 'error');
-          elements.retryQrBtn.classList.remove('hidden');
+          console.error('Camera access error:', error);
+          handleQRScannerError(error, isIOS);
         });
+    }
+
+    function handleQRScannerError(error, isIOS) {
+      let errorMessage = 'Camera access error: ' + error.message;
+      
+      if (isIOS) {
+        if (error.message.includes('Permission')) {
+          errorMessage = 'Camera permission denied. Please go to Settings > Safari > Camera and enable access, then refresh the page.';
+        } else if (error.message.includes('NotFound')) {
+          errorMessage = 'No camera found. Please check if your device has a camera and try again.';
+        } else if (error.message.includes('NotAllowed')) {
+          errorMessage = 'Camera access blocked. Please allow camera access in Safari settings and refresh the page.';
+        } else if (error.message.includes('NotReadable')) {
+          errorMessage = 'Camera is in use by another app. Please close other camera apps and try again.';
+        } else if (error.message.includes('OverconstrainedError')) {
+          errorMessage = 'Camera configuration error. Please try refreshing the page.';
+        } else {
+          errorMessage = 'Camera access error on iOS. Please check camera permissions in Settings > Safari > Camera.';
+        }
+      }
+      
+      showMessage(errorMessage, 'error');
+      elements.retryQrBtn.classList.remove('hidden');
+      
+      // Add iOS-specific retry instructions
+      if (isIOS) {
+        const retryInstructions = document.createElement('div');
+        retryInstructions.innerHTML = `
+          <div style="margin-top: 10px; padding: 10px; background: #FFF8E1; border: 1px solid #ECA02D; border-radius: 8px; font-size: 12px;">
+            <strong>iOS Troubleshooting:</strong><br>
+            1. Go to Settings > Safari > Camera > Allow<br>
+            2. Close Safari completely and reopen<br>
+            3. Refresh this page and try again
+          </div>
+        `;
+        elements.reader.appendChild(retryInstructions);
+      }
     }
 
     function onQRCodeScanned(decodedText) {
@@ -1446,6 +1577,8 @@
 
     function onQRScanError(error) {
       console.log('QR Scan error:', error);
+      // Don't show error for every frame that doesn't contain a QR code
+      // Only show errors for actual camera/permission issues
     }
 
     function enableSelfieCapture() {
@@ -1473,6 +1606,8 @@
         // Use more conservative resolution for iOS
         videoConstraints.width = { ideal: 480, min: 320, max: 640 };
         videoConstraints.height = { ideal: 600, min: 400, max: 800 };
+        
+        showMessage('iOS detected. Please allow camera access when prompted for selfie.', 'info');
       }
       
       navigator.mediaDevices.getUserMedia({ 
@@ -1484,22 +1619,43 @@
         elements.selfieCam.srcObject = stream;
         
         // iOS-specific: Wait for video to be ready
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         if (isIOS) {
           elements.selfieCam.addEventListener('loadedmetadata', () => {
             // Ensure video is playing on iOS
             elements.selfieCam.play().then(() => {
               showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
-            }).catch(() => {
+            }).catch((error) => {
+              console.error('Video play error on iOS:', error);
               showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
             });
           }, { once: true });
+          
+          // Add additional error handling for iOS
+          elements.selfieCam.addEventListener('error', (error) => {
+            console.error('Video error on iOS:', error);
+            showMessage('Camera error. Please try again or refresh the page.', 'error');
+          });
         } else {
           showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
         }
       })
       .catch(error => {
-        showMessage('Could not access camera: ' + error.message, 'error');
+        console.error('Camera access error:', error);
+        let errorMessage = 'Could not access camera: ' + error.message;
+        
+        if (isIOS) {
+          if (error.name === 'NotAllowedError') {
+            errorMessage = 'Camera access denied. Please go to Settings > Safari > Camera and enable access, then refresh the page.';
+          } else if (error.name === 'NotFoundError') {
+            errorMessage = 'No camera found. Please check if your device has a camera.';
+          } else if (error.name === 'NotReadableError') {
+            errorMessage = 'Camera is in use by another app. Please close other camera apps and try again.';
+          } else if (error.name === 'OverconstrainedError') {
+            errorMessage = 'Camera configuration error. Please try refreshing the page.';
+          }
+        }
+        
+        showMessage(errorMessage, 'error');
       });
     }
 
@@ -1515,6 +1671,16 @@
       elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
       elements.branchSelect.addEventListener('change', validateAndSubmit);
       elements.requestLocationBtn.addEventListener('click', requestLocationPermission);
+      elements.manualQrBtn.addEventListener('click', showManualQrInput);
+      elements.submitManualQr.addEventListener('click', submitManualQr);
+      elements.cancelManualQr.addEventListener('click', hideManualQrInput);
+      
+      // Add enter key support for manual QR input
+      elements.qrCodeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          submitManualQr();
+        }
+      });
     }
 
     function captureSelfie() {
@@ -1769,7 +1935,28 @@
 
     function retryQRScan() {
       elements.retryQrBtn.classList.add('hidden');
-      initializeQRScanner();
+      
+      // Clear any existing error messages
+      const existingInstructions = elements.reader.querySelector('div');
+      if (existingInstructions && existingInstructions.style.background === 'rgb(255, 248, 225)') {
+        existingInstructions.remove();
+      }
+      
+      // Stop existing scanner if running
+      if (qrReader) {
+        qrReader.stop().then(() => {
+          setTimeout(() => {
+            initializeQRScanner();
+          }, 500);
+        }).catch(() => {
+          // If stop fails, just reinitialize
+          setTimeout(() => {
+            initializeQRScanner();
+          }, 500);
+        });
+      } else {
+        initializeQRScanner();
+      }
     }
 
     function resetApp() {
@@ -1804,6 +1991,8 @@
       elements.retrySection.classList.add('hidden');
       elements.locationInfo.classList.add('hidden'); // Hide location info
       elements.locationPermissionBtn.classList.add('hidden'); // Hide location permission button
+      elements.manualQrInput.classList.add('hidden'); // Hide manual QR input
+      elements.qrCodeInput.value = ''; // Clear manual QR input
       elements.branchSelect.value = ''; // Reset branch dropdown
       elements.distanceText.textContent = 'Distance: Calculating...'; // Reset distance text
       
@@ -2196,6 +2385,38 @@
       if (form && form.parentNode) {
         form.parentNode.removeChild(form);
       }
+    }
+
+    function showManualQrInput() {
+      elements.manualQrInput.classList.remove('hidden');
+    }
+
+    function submitManualQr() {
+      const qrCode = elements.qrCodeInput.value;
+      if (qrCode.trim() === '') {
+        showMessage('Please enter a valid QR code.', 'error');
+        return;
+      }
+      scannedId = qrCode;
+      elements.manualQrInput.classList.add('hidden');
+      elements.qrCodeInput.value = '';
+      elements.qrStep.classList.remove('active');
+      elements.qrStep.classList.add('completed');
+      elements.selfieStep.classList.remove('active');
+      elements.selfieStep.classList.add('completed');
+      elements.submitStep.classList.add('active');
+      elements.submitBtn.disabled = false;
+      elements.captureBtn.classList.remove('hidden');
+      elements.retakeBtn.classList.add('hidden');
+      elements.submitBtn.classList.remove('loading');
+      showMessage('QR code scanned successfully!', 'success');
+      setTimeout(() => {
+        enableSelfieCapture();
+      }, 1000);
+    }
+
+    function hideManualQrInput() {
+      elements.manualQrInput.classList.add('hidden');
     }
 
     // Initialize when page loads
