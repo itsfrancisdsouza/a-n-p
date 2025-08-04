@@ -1588,13 +1588,21 @@
     }
 
     function enableSelfieCapture() {
+      // Ensure selfie step is active
       elements.selfieStep.classList.add('active');
       
       // Update status indicator for selfie step
       const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
       selfieIndicator.classList.add('active');
       
+      // Ensure capture button is enabled and visible
       elements.captureBtn.disabled = false;
+      elements.captureBtn.classList.remove('hidden');
+      elements.retakeBtn.classList.add('hidden');
+      
+      // Ensure video element is visible
+      elements.selfieCam.classList.remove('hidden');
+      elements.previewContainer.classList.add('hidden');
       
       // iOS-friendly camera configuration
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -1614,6 +1622,12 @@
         videoConstraints.height = { ideal: 600, min: 400, max: 800 };
         
         showMessage('iOS detected. Please allow camera access when prompted for selfie.', 'info');
+      }
+      
+      // Stop any existing stream first
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
       }
       
       navigator.mediaDevices.getUserMedia({ 
@@ -2412,16 +2426,34 @@
         scannedId = qrCode;
         elements.manualQrInput.classList.add('hidden');
         elements.qrCodeInput.value = '';
+        
+        // Update step indicators properly
         elements.qrStep.classList.remove('active');
         elements.qrStep.classList.add('completed');
-        elements.selfieStep.classList.remove('active');
-        elements.selfieStep.classList.add('completed');
-        elements.submitStep.classList.add('active');
-        elements.submitBtn.disabled = false;
-        elements.captureBtn.classList.remove('hidden');
-        elements.retakeBtn.classList.add('hidden');
+        
+        // Update QR step status indicator
+        const qrIndicator = elements.qrStep.querySelector('.status-indicator');
+        qrIndicator.classList.remove('active');
+        qrIndicator.classList.add('completed');
+        
+        // Enable selfie step
+        elements.selfieStep.classList.add('active');
+        
+        // Update selfie step status indicator
+        const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
+        selfieIndicator.classList.add('active');
+        
+        // Reset submit step
+        elements.submitStep.classList.remove('active', 'completed');
+        const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+        submitIndicator.classList.remove('active', 'completed');
+        
+        // Reset buttons
+        elements.captureBtn.disabled = false;
+        elements.submitBtn.disabled = true;
         elements.submitBtn.classList.remove('loading');
-        showMessage('QR code validated successfully!', 'success');
+        
+        showMessage('QR code validated successfully! Proceeding to selfie capture...', 'success');
         setTimeout(() => {
           enableSelfieCapture();
         }, 1000);
