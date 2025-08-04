@@ -1558,21 +1558,27 @@
     function onQRCodeScanned(decodedText) {
       scannedId = decodedText;
       
-      qrReader.stop();
-      
-      // Update step indicators
-      elements.qrStep.classList.remove('active');
-      elements.qrStep.classList.add('completed');
-      
-      // Update status indicator
-      const qrIndicator = elements.qrStep.querySelector('.status-indicator');
-      qrIndicator.classList.remove('active');
-      qrIndicator.classList.add('completed');
-      
-      showMessage(`QR Code scanned successfully! ID: ${scannedId}`, 'success');
-      setTimeout(() => {
-        enableSelfieCapture();
-      }, 1000);
+      // Validate QR code against staff database
+      if (validateQRCode(scannedId)) {
+        qrReader.stop();
+        
+        // Update step indicators
+        elements.qrStep.classList.remove('active');
+        elements.qrStep.classList.add('completed');
+        
+        // Update status indicator
+        const qrIndicator = elements.qrStep.querySelector('.status-indicator');
+        qrIndicator.classList.remove('active');
+        qrIndicator.classList.add('completed');
+        
+        showMessage(`QR Code validated successfully! ID: ${scannedId}`, 'success');
+        setTimeout(() => {
+          enableSelfieCapture();
+        }, 1000);
+      } else {
+        showMessage(`❌ Invalid QR Code: ${scannedId}. Please scan a valid staff QR code.`, 'error');
+        // Don't stop the scanner, let user try again
+      }
     }
 
     function onQRScanError(error) {
@@ -2031,13 +2037,16 @@
       }
       
       // Try to find user by ID in the staff database
-      const user = staffDatabase.find(staff => 
-        staff['staff-id'] === userId || 
-        staff['ID'] === userId || 
-        staff['Employee ID'] === userId || 
-        staff['Staff ID'] === userId ||
-        staff['id'] === userId
-      );
+      const user = staffDatabase.find(staff => {
+        // Check multiple possible ID field names
+        const staffId = staff['staff-id'] || staff['ID'] || staff['Employee ID'] || staff['Staff ID'] || staff['id'] || staff['QR Code'] || staff['QR'];
+        
+        if (staffId) {
+          // Case-insensitive comparison and trim whitespace
+          return staffId.toString().trim().toLowerCase() === userId.trim().toLowerCase();
+        }
+        return false;
+      });
       
       if (user) {
         // Get name from the 'Name' column (Column C in your CSV)
@@ -2397,26 +2406,66 @@
         showMessage('Please enter a valid QR code.', 'error');
         return;
       }
-      scannedId = qrCode;
-      elements.manualQrInput.classList.add('hidden');
-      elements.qrCodeInput.value = '';
-      elements.qrStep.classList.remove('active');
-      elements.qrStep.classList.add('completed');
-      elements.selfieStep.classList.remove('active');
-      elements.selfieStep.classList.add('completed');
-      elements.submitStep.classList.add('active');
-      elements.submitBtn.disabled = false;
-      elements.captureBtn.classList.remove('hidden');
-      elements.retakeBtn.classList.add('hidden');
-      elements.submitBtn.classList.remove('loading');
-      showMessage('QR code scanned successfully!', 'success');
-      setTimeout(() => {
-        enableSelfieCapture();
-      }, 1000);
+      
+      // Validate QR code against staff database
+      if (validateQRCode(qrCode)) {
+        scannedId = qrCode;
+        elements.manualQrInput.classList.add('hidden');
+        elements.qrCodeInput.value = '';
+        elements.qrStep.classList.remove('active');
+        elements.qrStep.classList.add('completed');
+        elements.selfieStep.classList.remove('active');
+        elements.selfieStep.classList.add('completed');
+        elements.submitStep.classList.add('active');
+        elements.submitBtn.disabled = false;
+        elements.captureBtn.classList.remove('hidden');
+        elements.retakeBtn.classList.add('hidden');
+        elements.submitBtn.classList.remove('loading');
+        showMessage('QR code validated successfully!', 'success');
+        setTimeout(() => {
+          enableSelfieCapture();
+        }, 1000);
+      } else {
+        showMessage(`❌ Invalid QR Code: ${qrCode}. Please enter a valid staff QR code.`, 'error');
+        elements.qrCodeInput.value = ''; // Clear the input for retry
+      }
     }
 
     function hideManualQrInput() {
       elements.manualQrInput.classList.add('hidden');
+    }
+
+    /**
+     * Validates if a QR code exists in the staff database
+     * @param {string} qrCode - The QR code to validate
+     * @returns {boolean} True if QR code is valid, false otherwise
+     */
+    function validateQRCode(qrCode) {
+      if (!staffDatabase || staffDatabase.length === 0) {
+        console.warn('Staff database not loaded yet');
+        showMessage('Staff database is still loading. Please wait and try again.', 'info');
+        return false;
+      }
+      
+      // Check if the QR code matches any staff ID in the database
+      const isValid = staffDatabase.some(staff => {
+        // Check multiple possible ID field names
+        const staffId = staff['staff-id'] || staff['ID'] || staff['Employee ID'] || staff['Staff ID'] || staff['id'] || staff['QR Code'] || staff['QR'];
+        
+        if (staffId) {
+          // Case-insensitive comparison and trim whitespace
+          return staffId.toString().trim().toLowerCase() === qrCode.trim().toLowerCase();
+        }
+        return false;
+      });
+      
+      if (isValid) {
+        console.log(`QR Code validated: ${qrCode}`);
+      } else {
+        console.log(`Invalid QR Code: ${qrCode}`);
+      }
+      
+      return isValid;
     }
 
     // Initialize when page loads
