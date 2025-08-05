@@ -1121,59 +1121,6 @@
         outline: 2px solid #ECA02D;
         outline-offset: 2px;
       }
-      
-      /* iOS-specific improvements */
-      @supports (-webkit-touch-callout: none) {
-        /* iOS Safari specific styles */
-        input[type="text"] {
-          -webkit-appearance: none;
-          border-radius: 8px;
-          font-size: 16px; /* Prevents zoom on iOS */
-        }
-        
-        #qrCodeInput {
-          -webkit-appearance: none;
-          border-radius: 8px;
-          font-size: 16px;
-          padding: 12px;
-          border: 1px solid #E0E0E0;
-          width: 100%;
-          box-sizing: border-box;
-        }
-        
-        /* Prevent zoom on input focus */
-        input:focus {
-          font-size: 16px;
-        }
-        
-        /* Better touch targets for iOS */
-        .btn {
-          min-height: 44px; /* Apple's recommended minimum touch target */
-        }
-        
-        /* Improve camera viewport on iOS */
-        #reader video,
-        #selfieCam {
-          -webkit-transform: translateZ(0);
-          transform: translateZ(0);
-        }
-        
-        /* Fix for iOS Safari viewport issues */
-        body {
-          position: fixed;
-          width: 100%;
-          height: 100%;
-          overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-        
-        .container {
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-        }
-      }
     }
   </style>
 </head>
@@ -1195,19 +1142,6 @@
       <button id="retryQrBtn" class="btn secondary hidden">
         <i class="fas fa-redo"></i> Retry QR Scan
       </button>
-      <button id="manualQrBtn" class="btn secondary">
-        <i class="fas fa-keyboard"></i> Enter QR Code Manually
-      </button>
-      <div id="manualQrInput" class="hidden" style="margin-top: 15px;">
-        <input type="text" id="qrCodeInput" placeholder="Enter QR code here..." 
-               style="width: 100%; padding: 12px; border: 1px solid #E0E0E0; border-radius: 8px; font-size: 14px; margin-bottom: 10px;">
-        <button id="submitManualQr" class="btn">
-          <i class="fas fa-check"></i> Submit
-        </button>
-        <button id="cancelManualQr" class="btn secondary">
-          <i class="fas fa-times"></i> Cancel
-        </button>
-      </div>
     </div>
 
     <!-- Step 2: Selfie Capture -->
@@ -1364,23 +1298,12 @@
       branchSelect: document.getElementById('branchSelect'),
       distanceText: document.getElementById('distanceText'),
       locationPermissionBtn: document.getElementById('locationPermissionBtn'),
-      requestLocationBtn: document.getElementById('requestLocationBtn'),
-      manualQrBtn: document.getElementById('manualQrBtn'),
-      manualQrInput: document.getElementById('manualQrInput'),
-      qrCodeInput: document.getElementById('qrCodeInput'),
-      submitManualQr: document.getElementById('submitManualQr'),
-      cancelManualQr: document.getElementById('cancelManualQr')
+      requestLocationBtn: document.getElementById('requestLocationBtn')
     };
 
     // Initialize the app
     function initApp() {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      
-      // Ensure any existing camera streams are stopped
-      if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop());
-        currentStream = null;
-      }
       
       if (isIOS) {
         showMessage('iOS detected. Location access will be requested when needed.', 'info');
@@ -1471,13 +1394,6 @@
     function initializeQRScanner() {
       qrReader = new Html5Qrcode("reader");
       
-      // iOS-specific detection
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      
-      if (isIOS) {
-        showMessage('iOS detected. Please allow camera access when prompted.', 'info');
-      }
-      
       Html5Qrcode.getCameras()
         .then(cameras => {
           if (cameras.length) {
@@ -1488,127 +1404,58 @@
             );
             const cameraId = backCamera ? backCamera.id : cameras[0].id;
             
-            // iOS-specific configuration
-            const config = {
-              fps: isIOS ? 5 : 10, // Lower FPS for iOS to prevent overheating
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0
-            };
-            
-            // Add iOS-specific constraints
-            if (isIOS) {
-              config.experimentalFeatures = {
-                useBarCodeDetectorIfSupported: false // Disable for better iOS compatibility
-              };
-            }
-            
             qrReader.start(
               cameraId,
-              config,
+              { 
+                fps: 10, 
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+              },
               onQRCodeScanned,
               onQRScanError
-            ).then(() => {
-              showMessage('QR Scanner started. Point camera at QR code.', 'info');
-            }).catch(error => {
-              console.error('QR Scanner start error:', error);
-              handleQRScannerError(error, isIOS);
-            });
+            );
           } else {
             showMessage('No camera detected. Please check camera permissions.', 'error');
-            elements.retryQrBtn.classList.remove('hidden');
           }
         })
         .catch(error => {
-          console.error('Camera access error:', error);
-          handleQRScannerError(error, isIOS);
+          showMessage('Camera access error: ' + error.message, 'error');
+          elements.retryQrBtn.classList.remove('hidden');
         });
-    }
-
-    function handleQRScannerError(error, isIOS) {
-      let errorMessage = 'Camera access error: ' + error.message;
-      
-      if (isIOS) {
-        if (error.message.includes('Permission')) {
-          errorMessage = 'Camera permission denied. Please go to Settings > Safari > Camera and enable access, then refresh the page.';
-        } else if (error.message.includes('NotFound')) {
-          errorMessage = 'No camera found. Please check if your device has a camera and try again.';
-        } else if (error.message.includes('NotAllowed')) {
-          errorMessage = 'Camera access blocked. Please allow camera access in Safari settings and refresh the page.';
-        } else if (error.message.includes('NotReadable')) {
-          errorMessage = 'Camera is in use by another app. Please close other camera apps and try again.';
-        } else if (error.message.includes('OverconstrainedError')) {
-          errorMessage = 'Camera configuration error. Please try refreshing the page.';
-        } else {
-          errorMessage = 'Camera access error on iOS. Please check camera permissions in Settings > Safari > Camera.';
-        }
-      }
-      
-      showMessage(errorMessage, 'error');
-      elements.retryQrBtn.classList.remove('hidden');
-      
-      // Add iOS-specific retry instructions
-      if (isIOS) {
-        const retryInstructions = document.createElement('div');
-        retryInstructions.innerHTML = `
-          <div style="margin-top: 10px; padding: 10px; background: #FFF8E1; border: 1px solid #ECA02D; border-radius: 8px; font-size: 12px;">
-            <strong>iOS Troubleshooting:</strong><br>
-            1. Go to Settings > Safari > Camera > Allow<br>
-            2. Close Safari completely and reopen<br>
-            3. Refresh this page and try again
-          </div>
-        `;
-        elements.reader.appendChild(retryInstructions);
-      }
     }
 
     function onQRCodeScanned(decodedText) {
       scannedId = decodedText;
       
-      // Validate QR code against staff database
-      if (validateQRCode(scannedId)) {
-        qrReader.stop();
-        
-        // Update step indicators
-        elements.qrStep.classList.remove('active');
-        elements.qrStep.classList.add('completed');
-        
-        // Update status indicator
-        const qrIndicator = elements.qrStep.querySelector('.status-indicator');
-        qrIndicator.classList.remove('active');
-        qrIndicator.classList.add('completed');
-        
-        showMessage(`QR Code validated successfully! ID: ${scannedId}`, 'success');
-        setTimeout(() => {
-          enableSelfieCapture();
-        }, 1000);
-      } else {
-        showMessage(`❌ Invalid QR Code: ${scannedId}. Please scan a valid staff QR code.`, 'error');
-        // Don't stop the scanner, let user try again
-      }
+      qrReader.stop();
+      
+      // Update step indicators
+      elements.qrStep.classList.remove('active');
+      elements.qrStep.classList.add('completed');
+      
+      // Update status indicator
+      const qrIndicator = elements.qrStep.querySelector('.status-indicator');
+      qrIndicator.classList.remove('active');
+      qrIndicator.classList.add('completed');
+      
+      showMessage(`QR Code scanned successfully! ID: ${scannedId}`, 'success');
+      setTimeout(() => {
+        enableSelfieCapture();
+      }, 1000);
     }
 
     function onQRScanError(error) {
       console.log('QR Scan error:', error);
-      // Don't show error for every frame that doesn't contain a QR code
-      // Only show errors for actual camera/permission issues
     }
 
     function enableSelfieCapture() {
-      // Ensure selfie step is active
       elements.selfieStep.classList.add('active');
       
       // Update status indicator for selfie step
       const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
       selfieIndicator.classList.add('active');
       
-      // Ensure capture button is enabled and visible
       elements.captureBtn.disabled = false;
-      elements.captureBtn.classList.remove('hidden');
-      elements.retakeBtn.classList.add('hidden');
-      
-      // Ensure video element is visible
-      elements.selfieCam.classList.remove('hidden');
-      elements.previewContainer.classList.add('hidden');
       
       // iOS-friendly camera configuration
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -1626,108 +1473,34 @@
         // Use more conservative resolution for iOS
         videoConstraints.width = { ideal: 480, min: 320, max: 640 };
         videoConstraints.height = { ideal: 600, min: 400, max: 800 };
+      }
+      
+      navigator.mediaDevices.getUserMedia({ 
+        video: videoConstraints,
+        audio: false // Explicitly disable audio to prevent video recording mode
+      })
+      .then(stream => {
+        currentStream = stream;
+        elements.selfieCam.srcObject = stream;
         
-        showMessage('iOS detected. Please allow camera access when prompted for selfie.', 'info');
-      }
-      
-      // Stop any existing stream first and ensure QR scanner is stopped
-      if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop());
-        currentStream = null;
-      }
-      
-      // Ensure QR scanner is completely stopped before starting selfie camera
-      if (qrReader) {
-        qrReader.stop().then(() => {
-          console.log('QR scanner stopped before selfie camera');
-          startSelfieCamera(videoConstraints, isIOS);
-        }).catch(error => {
-          console.log('QR scanner stop error, proceeding with selfie camera:', error);
-          startSelfieCamera(videoConstraints, isIOS);
-        });
-      } else {
-        startSelfieCamera(videoConstraints, isIOS);
-      }
-    }
-    
-    function startSelfieCamera(videoConstraints, isIOS) {
-      // Add a small delay to ensure previous camera streams are fully released
-      setTimeout(() => {
-        navigator.mediaDevices.getUserMedia({ 
-          video: videoConstraints,
-          audio: false // Explicitly disable audio to prevent video recording mode
-        })
-        .then(stream => {
-          currentStream = stream;
-          elements.selfieCam.srcObject = stream;
-          
-          // iOS-specific: Wait for video to be ready
-          if (isIOS) {
-            elements.selfieCam.addEventListener('loadedmetadata', () => {
-              // Ensure video is playing on iOS
-              elements.selfieCam.play().then(() => {
-                showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
-              }).catch((error) => {
-                console.error('Video play error on iOS:', error);
-                showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
-              });
-            }, { once: true });
-            
-            // Add additional error handling for iOS
-            elements.selfieCam.addEventListener('error', (error) => {
-              console.error('Video error on iOS:', error);
-              showMessage('Camera error. Please try again or refresh the page.', 'error');
+        // iOS-specific: Wait for video to be ready
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          elements.selfieCam.addEventListener('loadedmetadata', () => {
+            // Ensure video is playing on iOS
+            elements.selfieCam.play().then(() => {
+              showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
+            }).catch(() => {
+              showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
             });
-          } else {
-            showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
-          }
-        })
-        .catch(error => {
-          console.error('Camera access error:', error);
-          let errorMessage = 'Could not access camera: ' + error.message;
-          
-          if (isIOS) {
-            if (error.name === 'NotAllowedError') {
-              errorMessage = 'Camera access denied. Please go to Settings > Safari > Camera and enable access, then refresh the page.';
-            } else if (error.name === 'NotFoundError') {
-              errorMessage = 'No camera found. Please check if your device has a camera.';
-            } else if (error.name === 'NotReadableError') {
-              errorMessage = 'Camera is in use by another app. Please close other camera apps and try again.';
-            } else if (error.name === 'OverconstrainedError') {
-              errorMessage = 'Camera configuration error. Please try refreshing the page.';
-            }
-          }
-          
-                     showMessage(errorMessage, 'error');
-           
-           // Add retry button for camera access issues
-           const retryCameraBtn = document.createElement('button');
-           retryCameraBtn.className = 'btn secondary';
-           retryCameraBtn.innerHTML = '<i class="fas fa-redo"></i> Retry Camera';
-           retryCameraBtn.onclick = () => {
-             retryCameraBtn.remove();
-             // Add a longer delay for retry to ensure proper cleanup
-             setTimeout(() => {
-               enableSelfieCapture();
-             }, 1000);
-           };
-           elements.selfieStep.appendChild(retryCameraBtn);
-           
-           // Add specific troubleshooting for iOS
-           if (isIOS) {
-             const troubleshootingDiv = document.createElement('div');
-             troubleshootingDiv.style.cssText = 'margin-top: 10px; padding: 10px; background: #FFF8E1; border: 1px solid #ECA02D; border-radius: 8px; font-size: 12px; color: #F57C00;';
-             troubleshootingDiv.innerHTML = `
-               <strong>iOS Camera Troubleshooting:</strong><br>
-               1. Go to Settings > Safari > Camera > Allow<br>
-               2. Close Safari completely and reopen<br>
-               3. Refresh this page and try again<br>
-               4. If using Chrome, check Settings > Privacy & Security > Camera
-             `;
-             elements.selfieStep.appendChild(troubleshootingDiv);
-           }
-        });
-      }, 500); // 500ms delay to ensure proper cleanup
+          }, { once: true });
+        } else {
+          showMessage('Camera ready. Click "Take Selfie" to capture.', 'info');
+        }
+      })
+      .catch(error => {
+        showMessage('Could not access camera: ' + error.message, 'error');
+      });
     }
 
     function setupEventListeners() {
@@ -1742,16 +1515,6 @@
       elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
       elements.branchSelect.addEventListener('change', validateAndSubmit);
       elements.requestLocationBtn.addEventListener('click', requestLocationPermission);
-      elements.manualQrBtn.addEventListener('click', showManualQrInput);
-      elements.submitManualQr.addEventListener('click', submitManualQr);
-      elements.cancelManualQr.addEventListener('click', hideManualQrInput);
-      
-      // Add enter key support for manual QR input
-      elements.qrCodeInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          submitManualQr();
-        }
-      });
     }
 
     function captureSelfie() {
@@ -1817,7 +1580,14 @@
       
       elements.captureBtn.classList.add('hidden');
       elements.retakeBtn.classList.remove('hidden');
-      elements.submitBtn.disabled = false;
+      
+      // Only enable submit button if location is available
+      if (userLocation && userLocation.latitude !== 0 && userLocation.longitude !== 0) {
+        elements.submitBtn.disabled = false;
+      } else {
+        elements.submitBtn.disabled = true;
+        showMessage('Location access required. Please enable location services.', 'error');
+      }
       
       elements.selfieStep.classList.remove('active');
       elements.selfieStep.classList.add('completed');
@@ -1848,12 +1618,6 @@
       elements.captureBtn.classList.remove('hidden');
       elements.retakeBtn.classList.add('hidden');
       elements.submitBtn.disabled = true;
-      
-      // Remove any existing retry camera buttons
-      const existingRetryBtn = elements.selfieStep.querySelector('.btn.secondary');
-      if (existingRetryBtn && existingRetryBtn.innerHTML.includes('Retry Camera')) {
-        existingRetryBtn.remove();
-      }
       
       enableSelfieCapture();
     }
@@ -1945,6 +1709,8 @@
         let errorMessage = 'Submission failed';
         if (error.includes('Rate limit')) {
           errorMessage = 'Too many submissions. Please wait a moment and try again.';
+        } else if (error.includes('Location data is required')) {
+          errorMessage = 'Location access is required for attendance. Please enable location services in your browser settings and try again.';
         } else if (error.includes('Validation failed')) {
           errorMessage = error;
         } else if (error.includes('Network error')) {
@@ -2012,28 +1778,7 @@
 
     function retryQRScan() {
       elements.retryQrBtn.classList.add('hidden');
-      
-      // Clear any existing error messages
-      const existingInstructions = elements.reader.querySelector('div');
-      if (existingInstructions && existingInstructions.style.background === 'rgb(255, 248, 225)') {
-        existingInstructions.remove();
-      }
-      
-      // Stop existing scanner if running
-      if (qrReader) {
-        qrReader.stop().then(() => {
-          setTimeout(() => {
-            initializeQRScanner();
-          }, 500);
-        }).catch(() => {
-          // If stop fails, just reinitialize
-          setTimeout(() => {
-            initializeQRScanner();
-          }, 500);
-        });
-      } else {
-        initializeQRScanner();
-      }
+      initializeQRScanner();
     }
 
     function resetApp() {
@@ -2068,8 +1813,6 @@
       elements.retrySection.classList.add('hidden');
       elements.locationInfo.classList.add('hidden'); // Hide location info
       elements.locationPermissionBtn.classList.add('hidden'); // Hide location permission button
-      elements.manualQrInput.classList.add('hidden'); // Hide manual QR input
-      elements.qrCodeInput.value = ''; // Clear manual QR input
       elements.branchSelect.value = ''; // Reset branch dropdown
       elements.distanceText.textContent = 'Distance: Calculating...'; // Reset distance text
       
@@ -2108,16 +1851,13 @@
       }
       
       // Try to find user by ID in the staff database
-      const user = staffDatabase.find(staff => {
-        // Check multiple possible ID field names
-        const staffId = staff['staff-id'] || staff['ID'] || staff['Employee ID'] || staff['Staff ID'] || staff['id'] || staff['QR Code'] || staff['QR'];
-        
-        if (staffId) {
-          // Case-insensitive comparison and trim whitespace
-          return staffId.toString().trim().toLowerCase() === userId.trim().toLowerCase();
-        }
-        return false;
-      });
+      const user = staffDatabase.find(staff => 
+        staff['staff-id'] === userId || 
+        staff['ID'] === userId || 
+        staff['Employee ID'] === userId || 
+        staff['Staff ID'] === userId ||
+        staff['id'] === userId
+      );
       
       if (user) {
         // Get name from the 'Name' column (Column C in your CSV)
@@ -2197,6 +1937,9 @@
         elements.distanceText.textContent = 'Distance: Unknown';
         elements.locationInfo.classList.add('hidden');
         
+        // Disable submit button when location is not available
+        elements.submitBtn.disabled = true;
+        
         // Show location permission button for iOS if location is not available
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         if (isIOS && userLocation && userLocation.error) {
@@ -2261,6 +2004,15 @@
 
     function validateAndSubmit() {
       const selectedBranch = elements.branchSelect.value;
+      
+      // Check if location is available and valid
+      if (!userLocation || !userLocation.latitude || !userLocation.longitude ||
+          userLocation.latitude === 0 || userLocation.longitude === 0) {
+        elements.submitBtn.disabled = true;
+        showMessage('Location access is required. Please enable location services.', 'error');
+        return;
+      }
+      
       if (selectedBranch && userLocation) {
         validateLocation(selectedBranch);
       }
@@ -2412,11 +2164,12 @@
         errors.push('Branch selection is required');
       }
       
-      // Validate Location (optional but warn if missing)
+      // Validate Location (required for attendance)
       if (!data.location) {
-        console.warn('Location data is missing');
-      } else if (data.location.latitude === 0 && data.location.longitude === 0) {
-        console.warn('Location coordinates are invalid');
+        errors.push('Location data is required for attendance');
+      } else if (!data.location.latitude || !data.location.longitude ||
+                 data.location.latitude === 0 || data.location.longitude === 0) {
+        errors.push('Valid location coordinates are required. Please enable location services and try again.');
       }
       
       if (errors.length > 0) {
@@ -2467,145 +2220,8 @@
       }
     }
 
-    function showManualQrInput() {
-      // Stop QR scanner before showing manual input to prevent camera conflicts
-      if (qrReader) {
-        qrReader.stop().then(() => {
-          console.log('QR scanner stopped for manual input');
-        }).catch(error => {
-          console.log('QR scanner stop error:', error);
-        });
-      }
-      
-      elements.manualQrInput.classList.remove('hidden');
-    }
-
-    function submitManualQr() {
-      const qrCode = elements.qrCodeInput.value;
-      if (qrCode.trim() === '') {
-        showMessage('Please enter a valid QR code.', 'error');
-        return;
-      }
-      
-      // Validate QR code against staff database
-      if (validateQRCode(qrCode)) {
-        scannedId = qrCode;
-        elements.manualQrInput.classList.add('hidden');
-        elements.qrCodeInput.value = '';
-        
-        // Ensure QR scanner is completely stopped before proceeding
-        if (qrReader) {
-          qrReader.stop().then(() => {
-            console.log('QR scanner stopped after manual QR submission');
-            proceedToSelfieStep();
-          }).catch(error => {
-            console.log('QR scanner stop error after manual submission:', error);
-            proceedToSelfieStep();
-          });
-        } else {
-          proceedToSelfieStep();
-        }
-      } else {
-        showMessage(`❌ Invalid QR Code: ${qrCode}. Please enter a valid staff QR code.`, 'error');
-        elements.qrCodeInput.value = ''; // Clear the input for retry
-      }
-    }
-    
-    function proceedToSelfieStep() {
-      // Update step indicators properly
-      elements.qrStep.classList.remove('active');
-      elements.qrStep.classList.add('completed');
-      
-      // Update QR step status indicator
-      const qrIndicator = elements.qrStep.querySelector('.status-indicator');
-      qrIndicator.classList.remove('active');
-      qrIndicator.classList.add('completed');
-      
-      // Enable selfie step
-      elements.selfieStep.classList.add('active');
-      
-      // Update selfie step status indicator
-      const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
-      selfieIndicator.classList.add('active');
-      
-      // Reset submit step
-      elements.submitStep.classList.remove('active', 'completed');
-      const submitIndicator = elements.submitStep.querySelector('.status-indicator');
-      submitIndicator.classList.remove('active', 'completed');
-      
-      // Reset buttons
-      elements.captureBtn.disabled = false;
-      elements.submitBtn.disabled = true;
-      elements.submitBtn.classList.remove('loading');
-      
-      showMessage('QR code validated successfully! Proceeding to selfie capture...', 'success');
-      setTimeout(() => {
-        enableSelfieCapture();
-      }, 1000);
-    }
-
-    function hideManualQrInput() {
-      elements.manualQrInput.classList.add('hidden');
-    }
-
-    /**
-     * Validates if a QR code exists in the staff database
-     * @param {string} qrCode - The QR code to validate
-     * @returns {boolean} True if QR code is valid, false otherwise
-     */
-    function validateQRCode(qrCode) {
-      if (!staffDatabase || staffDatabase.length === 0) {
-        console.warn('Staff database not loaded yet');
-        showMessage('Staff database is still loading. Please wait and try again.', 'info');
-        return false;
-      }
-      
-      // Check if the QR code matches any staff ID in the database
-      const isValid = staffDatabase.some(staff => {
-        // Check multiple possible ID field names
-        const staffId = staff['staff-id'] || staff['ID'] || staff['Employee ID'] || staff['Staff ID'] || staff['id'] || staff['QR Code'] || staff['QR'];
-        
-        if (staffId) {
-          // Case-insensitive comparison and trim whitespace
-          return staffId.toString().trim().toLowerCase() === qrCode.trim().toLowerCase();
-        }
-        return false;
-      });
-      
-      if (isValid) {
-        console.log(`QR Code validated: ${qrCode}`);
-      } else {
-        console.log(`Invalid QR Code: ${qrCode}`);
-      }
-      
-      return isValid;
-    }
-
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', initApp);
-    
-    // Handle page visibility changes to manage camera resources
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        // Page is hidden, stop camera streams to save resources
-        if (currentStream) {
-          currentStream.getTracks().forEach(track => track.stop());
-          currentStream = null;
-        }
-        if (qrReader) {
-          qrReader.stop().catch(error => {
-            console.log('QR scanner stop error on page hide:', error);
-          });
-        }
-      } else {
-        // Page is visible again, reinitialize if needed
-        if (elements.qrStep.classList.contains('active') && !qrReader) {
-          setTimeout(() => {
-            initializeQRScanner();
-          }, 500);
-        }
-      }
-    });
   </script>
 </body>
 </html>
