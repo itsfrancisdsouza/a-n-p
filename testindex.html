@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attendance System - QR & Selfie</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     :root {
@@ -121,12 +121,13 @@
       border-radius: 12px;
       background: #ffffff;
       border: 1px solid #e1e5e9;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       position: relative;
       overflow: hidden;
       width: 100%;
       box-sizing: border-box;
+      cursor: pointer;
     }
 
     .step-container:hover {
@@ -153,6 +154,147 @@
 
     .step-container.completed .step-title .icon-container i {
       color: white;
+    }
+
+    .step-container.collapsed {
+      padding: 16px 20px;
+      cursor: pointer;
+    }
+
+    .step-container.collapsed .step-content {
+      display: none;
+    }
+
+    .step-container.collapsed .step-title {
+      margin-bottom: 0;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      text-align: left;
+    }
+
+    .step-container.collapsed .step-title .text {
+      text-align: left;
+      margin-left: 16px;
+    }
+
+    .step-container.collapsed .step-title .icon-container {
+      margin: 0;
+    }
+
+    .step-container.collapsed .step-title .status-indicator {
+      margin: 0;
+    }
+
+    .step-container.expanded {
+      padding: 20px;
+    }
+
+    .step-container.expanded .step-content {
+      display: block;
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .step-content {
+      margin-top: 16px;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .step-toggle {
+      background: none;
+      border: none;
+      color: var(--brand);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+    }
+
+    .step-toggle:hover {
+      background: rgba(236, 160, 45, 0.1);
+      transform: scale(1.1);
+    }
+
+    .step-toggle i {
+      transition: transform 0.3s ease;
+    }
+
+    .step-container.collapsed .step-toggle i {
+      transform: rotate(-90deg);
+    }
+
+    .step-container.expanded .step-toggle i {
+      transform: rotate(0deg);
+    }
+
+    .step-navigation {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .step-nav-btn {
+      background: #f8f9fa;
+      border: 1px solid #e1e5e9;
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step-nav-btn:hover {
+      background: var(--brand);
+      color: white;
+      border-color: var(--brand);
+    }
+
+    .step-nav-btn.active {
+      background: var(--brand);
+      color: white;
+      border-color: var(--brand);
+    }
+
+    .step-nav-btn.completed {
+      background: var(--success);
+      color: white;
+      border-color: var(--success);
+    }
+
+    .step-nav-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .step-title {
@@ -217,6 +359,12 @@
       box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
     }
 
+    .step-title .status-indicator.completed {
+      background: var(--success);
+      color: white;
+      box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    }
+
     .step-title .status-indicator.completed::after {
       content: '✓';
       position: absolute;
@@ -226,6 +374,10 @@
       color: white;
       font-size: 12px;
       font-weight: bold;
+    }
+
+    .step-title .status-indicator.completed .status-text {
+      display: none;
     }
 
     .step-title .text {
@@ -251,58 +403,10 @@
       width: 100%;
       max-width: 100%;
       border: 1px solid #E0E0E0;
-      position: relative;
-      overflow: hidden;
       box-sizing: border-box;
     }
 
-    #reader video {
-      border-radius: 8px;
-      width: 100%;
-      height: auto;
-      max-height: 250px;
-      object-fit: cover;
-      box-sizing: border-box;
-      display: block;
-    }
-
-    #reader canvas {
-      border-radius: 8px;
-      width: 100%;
-      height: auto;
-      max-height: 250px;
-      box-sizing: border-box;
-      display: block;
-    }
-
-    /* QR Scanner overlay styling */
-    #reader::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 200px;
-      height: 200px;
-      border: 2px solid #4299e1;
-      border-radius: 10px;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    #reader::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 180px;
-      height: 180px;
-      border: 2px solid rgba(66, 153, 225, 0.3);
-      border-radius: 8px;
-      pointer-events: none;
-      z-index: 9;
-    }
+    /* QR Scanner styling - let the library handle its own UI */
 
     /* Ensure QR scanner stays within container */
     .step-container #reader {
@@ -591,6 +695,8 @@
       transition: all 0.3s ease;
       margin-top: 16px;
       box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+      width: 100%;
+      display: block;
     }
 
     .close-popup-btn:hover {
@@ -1191,6 +1297,23 @@
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
       }
 
+      .step-navigation {
+        gap: 6px;
+        margin-top: 12px;
+      }
+
+      .step-nav-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+        gap: 4px;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .step-nav-btn i {
+        font-size: 10px;
+      }
+
       .header {
         margin-bottom: 12px;
       }
@@ -1229,23 +1352,24 @@
         font-size: 1em;
         margin-bottom: 12px;
         padding: 6px 0;
-        flex-direction: row;
+        flex-direction: column;
         gap: 8px;
-        flex-wrap: nowrap;
+        align-items: center;
       }
 
-      .step-title i {
-        margin-right: 8px;
-        font-size: 1em;
-        width: 28px;
-        height: 28px;
-        padding: 5px;
+      .step-title .icon-container {
+        width: 40px;
+        height: 40px;
+      }
+
+      .step-title .icon-container i {
+        font-size: 16px;
       }
 
       .step-title .status-indicator {
-        margin-left: 8px;
-        width: 10px;
-        height: 10px;
+        width: 60px;
+        height: 20px;
+        font-size: 9px;
       }
 
       #reader {
@@ -1430,6 +1554,16 @@
         touch-action: manipulation;
       }
 
+      .step-nav-btn {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(236, 160, 45, 0.2);
+      }
+
+      .step-toggle {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(236, 160, 45, 0.2);
+      }
+
       /* Improve scrolling on mobile */
       body {
         -webkit-overflow-scrolling: touch;
@@ -1450,6 +1584,16 @@
         outline: 2px solid #ECA02D;
         outline-offset: 2px;
       }
+
+      .step-nav-btn:focus {
+        outline: 2px solid #ECA02D;
+        outline-offset: 2px;
+      }
+
+      .step-toggle:focus {
+        outline: 2px solid #ECA02D;
+        outline-offset: 2px;
+      }
     }
   </style>
 </head>
@@ -1461,83 +1605,123 @@
       <p>Scan QR Code & Capture Selfie for Attendance</p>
     </div>
 
+    <!-- Step Navigation -->
+    <div class="step-navigation">
+      <button class="step-nav-btn active" data-step="qr">
+        <i class="fas fa-qrcode"></i> QR Scan
+      </button>
+      <button class="step-nav-btn" data-step="selfie">
+        <i class="fas fa-camera"></i> Selfie
+      </button>
+      <button class="step-nav-btn" data-step="submit">
+        <i class="fas fa-paper-plane"></i> Submit
+      </button>
+    </div>
+
     <!-- Step 1: QR Scanner -->
-    <div id="qrStep" class="step-container active">
-      <div class="step-title">
-        <div class="icon-container">
-          <i class="fas fa-qrcode"></i>
+    <div id="qrStep" class="step-container active expanded">
+      <div class="step-header" onclick="toggleStep('qrStep')">
+        <div class="step-title">
+          <div class="icon-container">
+            <i class="fas fa-qrcode"></i>
+          </div>
+                  <div class="text">Step 1: Scan QR Code</div>
+        <span class="status-indicator active">
+          <span class="status-text">Ready</span>
+        </span>
         </div>
-        <span class="status-indicator active">Ready</span>
-        <div class="text">Step 1: Scan QR Code</div>
-      </div>
-      <div id="reader"></div>
-      <div style="display: flex; gap: 12px; width: 100%;">
-        <button id="retryQrBtn" class="btn secondary hidden">
-          <i class="fas fa-redo"></i> Retry QR Scan
+        <button class="step-toggle">
+          <i class="fas fa-chevron-down"></i>
         </button>
+      </div>
+      <div class="step-content">
+        <div id="reader"></div>
+        <div style="display: flex; gap: 12px; width: 100%;">
+          <button id="retryQrBtn" class="btn secondary hidden">
+            <i class="fas fa-redo"></i> Retry QR Scan
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Step 2: Selfie Capture -->
-    <div id="selfieStep" class="step-container">
-      <div class="step-title">
-        <div class="icon-container">
-          <i class="fas fa-camera"></i>
+    <div id="selfieStep" class="step-container collapsed">
+      <div class="step-header" onclick="toggleStep('selfieStep')">
+        <div class="step-title">
+          <div class="icon-container">
+            <i class="fas fa-camera"></i>
+          </div>
+                  <div class="text">Step 2: Take Selfie</div>
+        <span class="status-indicator">
+          <span class="status-text">Waiting</span>
+        </span>
         </div>
-        <span class="status-indicator">Waiting</span>
-        <div class="text">Step 2: Take Selfie</div>
-      </div>
-      <video id="selfieCam" autoplay muted playsinline webkit-playsinline></video>
-      <canvas id="canvas" class="hidden"></canvas>
-      <div class="preview-container hidden" id="previewContainer">
-        <img id="preview" alt="Selfie Preview">
-      </div>
-      <div style="display: flex; gap: 12px; width: 100%;">
-        <button id="captureBtn" class="btn" disabled>
-          <i class="fas fa-camera"></i> Take Selfie
+        <button class="step-toggle">
+          <i class="fas fa-chevron-down"></i>
         </button>
-        <button id="retakeBtn" class="btn secondary hidden">
-          <i class="fas fa-redo"></i> Retake
-        </button>
+      </div>
+      <div class="step-content">
+        <video id="selfieCam" autoplay muted playsinline webkit-playsinline></video>
+        <canvas id="canvas" class="hidden"></canvas>
+        <div class="preview-container hidden" id="previewContainer">
+          <img id="preview" alt="Selfie Preview">
+        </div>
+        <div style="display: flex; gap: 12px; width: 100%;">
+          <button id="captureBtn" class="btn" disabled>
+            <i class="fas fa-camera"></i> Take Selfie
+          </button>
+          <button id="retakeBtn" class="btn secondary hidden">
+            <i class="fas fa-redo"></i> Retake
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Step 3: Submit -->
-    <div id="submitStep" class="step-container">
-      <div class="step-title">
-        <div class="icon-container">
-          <i class="fas fa-paper-plane"></i>
+    <div id="submitStep" class="step-container collapsed">
+      <div class="step-header" onclick="toggleStep('submitStep')">
+        <div class="step-title">
+          <div class="icon-container">
+            <i class="fas fa-paper-plane"></i>
+          </div>
+                  <div class="text">Step 3: Submit Attendance</div>
+        <span class="status-indicator">
+          <span class="status-text">Waiting</span>
+        </span>
         </div>
-        <span class="status-indicator">Waiting</span>
-        <div class="text">Step 3: Submit Attendance</div>
-      </div>
-      <div id="locationInfo" class="location-info hidden">
-        <div class="info-item">
-          <i class="fas fa-map-marker-alt"></i>
-          <span id="locationText">Location: Capturing...</span>
-        </div>
-        <div class="info-item">
-          <i class="fas fa-building"></i>
-          <span id="branchText">Branch: Selecting...</span>
-        </div>
-        <div class="info-item">
-          <i class="fas fa-check-circle"></i>
-          <span id="distanceText">Distance: Calculating...</span>
-        </div>
-      </div>
-      <div class="branch-selection">
-        <label for="branchSelect">Select Branch:</label>
-        <select id="branchSelect" class="branch-dropdown">
-          <option value="">Loading branches...</option>
-        </select>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-        <button id="submitBtn" class="btn success" disabled>
-          <i class="fas fa-check"></i> Submit Attendance
+        <button class="step-toggle">
+          <i class="fas fa-chevron-down"></i>
         </button>
-        <button id="resetBtn" class="btn secondary">
-          <i class="fas fa-refresh"></i> Start Over
-        </button>
+      </div>
+      <div class="step-content">
+        <div id="locationInfo" class="location-info hidden">
+          <div class="info-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <span id="locationText">Location: Capturing...</span>
+          </div>
+          <div class="info-item">
+            <i class="fas fa-building"></i>
+            <span id="branchText">Branch: Selecting...</span>
+          </div>
+          <div class="info-item">
+            <i class="fas fa-check-circle"></i>
+            <span id="distanceText">Distance: Calculating...</span>
+          </div>
+        </div>
+        <div class="branch-selection">
+          <label for="branchSelect">Select Branch:</label>
+          <select id="branchSelect" class="branch-dropdown">
+            <option value="">Loading branches...</option>
+          </select>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+          <button id="submitBtn" class="btn success" disabled>
+            <i class="fas fa-check"></i> Submit Attendance
+          </button>
+          <button id="resetBtn" class="btn secondary">
+            <i class="fas fa-refresh"></i> Start Over
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1661,6 +1845,8 @@
       initializeQRScanner();
       setupEventListeners();
       fetchStaffDatabase(); // Fetch staff database
+      
+
     }
 
     // Get user location with iOS-specific handling
@@ -1738,10 +1924,25 @@
     }
 
     function initializeQRScanner() {
+      console.log('Initializing QR Scanner...');
+      
+      // Clear the reader element first
+      const readerElement = document.getElementById('reader');
+      readerElement.innerHTML = '';
+      
+      // Check if Html5Qrcode is available
+      if (typeof Html5Qrcode === 'undefined') {
+        console.error('Html5Qrcode library not loaded');
+        showMessage('QR Scanner library not loaded. Please refresh the page.', 'error');
+        elements.retryQrBtn.classList.remove('hidden');
+        return;
+      }
+      
       qrReader = new Html5Qrcode("reader");
       
       Html5Qrcode.getCameras()
         .then(cameras => {
+          console.log('Available cameras:', cameras);
           if (cameras.length) {
             // Try to use back camera if available
             const backCamera = cameras.find(cam => 
@@ -1749,6 +1950,7 @@
               cam.label.toLowerCase().includes('rear')
             );
             const cameraId = backCamera ? backCamera.id : cameras[0].id;
+            console.log('Using camera:', cameraId);
             
             qrReader.start(
               cameraId,
@@ -1759,12 +1961,22 @@
               },
               onQRCodeScanned,
               onQRScanError
-            );
+            ).then(() => {
+              console.log('QR Scanner started successfully');
+              showMessage('QR Scanner ready. Point camera at QR code.', 'info');
+            }).catch(error => {
+              console.error('QR Scanner start error:', error);
+              showMessage('Failed to start QR scanner: ' + error.message, 'error');
+              elements.retryQrBtn.classList.remove('hidden');
+            });
           } else {
+            console.log('No cameras found');
             showMessage('No camera detected. Please check camera permissions.', 'error');
+            elements.retryQrBtn.classList.remove('hidden');
           }
         })
         .catch(error => {
+          console.error('Camera access error:', error);
           showMessage('Camera access error: ' + error.message, 'error');
           elements.retryQrBtn.classList.remove('hidden');
         });
@@ -1781,27 +1993,47 @@
       
       // Update status indicator
       const qrIndicator = elements.qrStep.querySelector('.status-indicator');
+      const qrStatusText = qrIndicator.querySelector('.status-text');
       qrIndicator.classList.remove('active');
       qrIndicator.classList.add('completed');
+      if (qrStatusText) {
+        qrStatusText.textContent = '';
+      }
       
       showMessage(`QR Code scanned successfully! ID: ${scannedId}`, 'success');
+      
+      // Update navigation and expand next step
+      updateStepNavigation();
       setTimeout(() => {
+        expandStep('selfieStep');
         enableSelfieCapture();
       }, 1000);
     }
 
     function onQRScanError(error) {
-      console.log('QR Scan error:', error);
+      // Don't show error messages for every frame, only for actual errors
+      if (error.name !== 'NotFoundException') {
+        console.error('QR Scanner error:', error);
+      }
     }
+
+
 
     function enableSelfieCapture() {
       elements.selfieStep.classList.add('active');
       
       // Update status indicator for selfie step
       const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
+      const selfieStatusText = selfieIndicator.querySelector('.status-text');
       selfieIndicator.classList.add('active');
+      if (selfieStatusText) {
+        selfieStatusText.textContent = 'Ready';
+      }
       
       elements.captureBtn.disabled = false;
+      
+      // Update navigation
+      updateStepNavigation();
       
       // iOS-friendly camera configuration
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -1857,10 +2089,21 @@
         window.location.reload();
       });
       elements.retryQrBtn.addEventListener('click', retryQRScan);
+      
+
       elements.retrySubmitBtn.addEventListener('click', retrySubmission);
       elements.cancelRetryBtn.addEventListener('click', hideRetrySection);
       elements.branchSelect.addEventListener('change', validateAndSubmit);
       elements.requestLocationBtn.addEventListener('click', requestLocationPermission);
+      
+      // Add step navigation event listeners
+      document.querySelectorAll('.step-nav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const step = btn.getAttribute('data-step');
+          navigateToStep(step);
+        });
+      });
     }
 
     function captureSelfie() {
@@ -1934,11 +2177,25 @@
       
       // Update status indicators
       const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
+      const selfieStatusText = selfieIndicator.querySelector('.status-text');
       selfieIndicator.classList.remove('active');
       selfieIndicator.classList.add('completed');
+      if (selfieStatusText) {
+        selfieStatusText.textContent = '';
+      }
       
       const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+      const submitStatusText = submitIndicator.querySelector('.status-text');
       submitIndicator.classList.add('active');
+      if (submitStatusText) {
+        submitStatusText.textContent = 'Ready';
+      }
+      
+      // Update navigation and expand next step
+      updateStepNavigation();
+      setTimeout(() => {
+        expandStep('submitStep');
+      }, 500);
       
       showMessage('Selfie captured! Click "Submit Attendance" to continue.', 'success');
       
@@ -2022,8 +2279,12 @@
         elements.submitStep.classList.add('completed');
         
         const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+        const submitStatusText = submitIndicator.querySelector('.status-text');
         submitIndicator.classList.remove('active');
         submitIndicator.classList.add('completed');
+        if (submitStatusText) {
+          submitStatusText.textContent = '';
+        }
         
         // Don't auto-reset, let user close popup first
         // setTimeout(() => {
@@ -2137,14 +2398,30 @@
       
       // Reset status indicators
       const qrIndicator = elements.qrStep.querySelector('.status-indicator');
+      const qrStatusText = qrIndicator.querySelector('.status-text');
       qrIndicator.classList.remove('completed');
       qrIndicator.classList.add('active');
+      if (qrStatusText) {
+        qrStatusText.textContent = 'Ready';
+      }
       
       const selfieIndicator = elements.selfieStep.querySelector('.status-indicator');
+      const selfieStatusText = selfieIndicator.querySelector('.status-text');
       selfieIndicator.classList.remove('active', 'completed');
+      if (selfieStatusText) {
+        selfieStatusText.textContent = 'Waiting';
+      }
       
       const submitIndicator = elements.submitStep.querySelector('.status-indicator');
+      const submitStatusText = submitIndicator.querySelector('.status-text');
       submitIndicator.classList.remove('active', 'completed');
+      if (submitStatusText) {
+        submitStatusText.textContent = 'Waiting';
+      }
+      
+      // Reset stack navigation
+      expandStep('qrStep');
+      updateStepNavigation();
       
       // Hide elements
       elements.previewContainer.classList.add('hidden');
@@ -2233,10 +2510,12 @@
       document.getElementById('popupId').textContent = userInfo.id;
       document.getElementById('popupTime').textContent = formattedTime;
 
-      // Collapse all steps
-      elements.qrStep.style.display = 'none';
-      elements.selfieStep.style.display = 'none';
-      elements.submitStep.style.display = 'none';
+      // Collapse all steps and hide navigation
+      document.querySelectorAll('.step-container').forEach(container => {
+        container.classList.remove('expanded');
+        container.classList.add('collapsed');
+      });
+      document.querySelector('.step-navigation').style.display = 'none';
 
       // Show popup
       document.getElementById('successPopup').classList.remove('hidden');
@@ -2570,6 +2849,96 @@
 
     // Update clock every second
     setInterval(updateClock, 1000);
+
+    // Stack functionality functions
+    function toggleStep(stepId) {
+      const stepContainer = document.getElementById(stepId);
+      const isExpanded = stepContainer.classList.contains('expanded');
+      
+      // Collapse all steps first
+      document.querySelectorAll('.step-container').forEach(container => {
+        container.classList.remove('expanded');
+        container.classList.add('collapsed');
+      });
+      
+      // Expand the clicked step if it wasn't expanded
+      if (!isExpanded) {
+        stepContainer.classList.remove('collapsed');
+        stepContainer.classList.add('expanded');
+      }
+      
+      // Update navigation buttons
+      updateStepNavigation();
+    }
+
+    function navigateToStep(stepName) {
+      const stepMap = {
+        'qr': 'qrStep',
+        'selfie': 'selfieStep',
+        'submit': 'submitStep'
+      };
+      
+      const stepId = stepMap[stepName];
+      if (stepId) {
+        // Collapse all steps first
+        document.querySelectorAll('.step-container').forEach(container => {
+          container.classList.remove('expanded');
+          container.classList.add('collapsed');
+        });
+        
+        // Expand the target step
+        const targetStep = document.getElementById(stepId);
+        targetStep.classList.remove('collapsed');
+        targetStep.classList.add('expanded');
+        
+        // Update navigation buttons
+        updateStepNavigation();
+      }
+    }
+
+    function updateStepNavigation() {
+      const navButtons = document.querySelectorAll('.step-nav-btn');
+      const expandedStep = document.querySelector('.step-container.expanded');
+      
+      navButtons.forEach(btn => {
+        btn.classList.remove('active');
+        const stepName = btn.getAttribute('data-step');
+        
+        if (expandedStep) {
+          const stepId = expandedStep.id;
+          if ((stepName === 'qr' && stepId === 'qrStep') ||
+              (stepName === 'selfie' && stepId === 'selfieStep') ||
+              (stepName === 'submit' && stepId === 'submitStep')) {
+            btn.classList.add('active');
+          }
+        }
+        
+        // Update completed status
+        if (stepName === 'qr' && elements.qrStep.classList.contains('completed')) {
+          btn.classList.add('completed');
+        } else if (stepName === 'selfie' && elements.selfieStep.classList.contains('completed')) {
+          btn.classList.add('completed');
+        } else if (stepName === 'submit' && elements.submitStep.classList.contains('completed')) {
+          btn.classList.add('completed');
+        }
+      });
+    }
+
+    function expandStep(stepId) {
+      // Collapse all steps first
+      document.querySelectorAll('.step-container').forEach(container => {
+        container.classList.remove('expanded');
+        container.classList.add('collapsed');
+      });
+      
+      // Expand the specified step
+      const targetStep = document.getElementById(stepId);
+      targetStep.classList.remove('collapsed');
+      targetStep.classList.add('expanded');
+      
+      // Update navigation buttons
+      updateStepNavigation();
+    }
 
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', initApp);
