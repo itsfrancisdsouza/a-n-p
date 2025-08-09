@@ -8,6 +8,18 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
+    :root {
+      --brand: #ECA02D;
+      --brand-dark: #D68910;
+      --text: #0a0a0a;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --border: rgba(236, 160, 45, 0.2);
+      --success: #4CAF50;
+      --error: #F44336;
+      --info: #2196F3;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -15,27 +27,27 @@
     }
 
     body {
-      background: linear-gradient(135deg, #F5F5F5 0%, #E0E0E0 100%);
-      color: #222222;
-      font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8f9fa;
+      color: var(--text);
+      font-family: 'Roboto', 'Roboto Condensed', system-ui, -apple-system, sans-serif;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 16px;
       margin: 0;
-      box-sizing: border-box;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      line-height: 1.4;
     }
 
     .container {
-      background: #FFFFFF;
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
-      padding: 24px;
+      background: #ffffff;
+      border-radius: 0;
+      box-shadow: none;
+      padding: 24px 20px;
       width: 100%;
-      max-width: 480px;
+      max-width: 680px;
       min-width: 320px;
       text-align: center;
       box-sizing: border-box;
@@ -43,36 +55,44 @@
       overflow: hidden;
     }
 
-    .container::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, #ECA02D 0%, #D68910 100%);
-    }
+
 
     .header {
       margin-bottom: 32px;
-      padding-top: 8px;
+      padding-top: 0;
     }
 
     .header h1 {
-      color: #222222;
-      font-size: clamp(1.75em, 4vw, 2.4em);
-      font-weight: 500;
+      color: var(--text);
+      font-size: 24px;
+      font-weight: 600;
       margin-bottom: 8px;
       line-height: 1.2;
       letter-spacing: -0.5px;
     }
 
     .header p {
-      color: #666666;
-      font-size: clamp(0.9em, 2.5vw, 1.1em);
-      line-height: 1.5;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
       font-weight: 400;
-      opacity: 0.87;
+    }
+
+    .clock {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text);
+      background: #f8f9fa;
+      border: 1px solid #e1e5e9;
+      border-radius: 8px;
+      padding: 12px 20px;
+      margin-bottom: 16px;
+      display: block;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-sizing: border-box;
     }
 
     .status-indicator {
@@ -96,13 +116,13 @@
     }
 
     .step-container {
-      margin: 16px 0;
-      padding: 24px;
+      margin: 12px 0;
+      padding: 20px;
       border-radius: 12px;
-      background: #FFFFFF;
-      border: 1px solid #E0E0E0;
-      transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+      background: #ffffff;
+      border: 1px solid #e1e5e9;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       position: relative;
       overflow: hidden;
       width: 100%;
@@ -110,74 +130,91 @@
     }
 
     .step-container:hover {
-      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
       transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .step-container.active {
-      border-color: #ECA02D;
-      background: #FFF8E1;
-      box-shadow: 0 4px 8px rgba(236, 160, 45, 0.15), 0 2px 4px rgba(236, 160, 45, 0.12);
+      border-color: var(--brand);
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(236, 160, 45, 0.2);
     }
 
     .step-container.completed {
-      border-color: #4CAF50;
-      background: #E8F5E8;
-      box-shadow: 0 4px 8px rgba(76, 175, 80, 0.15), 0 2px 4px rgba(76, 175, 80, 0.12);
+      border-color: var(--success);
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+    }
+
+    .step-container.completed .step-title .icon-container {
+      background: var(--success);
+      box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+    }
+
+    .step-container.completed .step-title .icon-container i {
+      color: white;
     }
 
     .step-title {
-      font-size: clamp(1.1em, 3.5vw, 1.4em);
-      font-weight: 500;
-      color: #222222;
-      margin-bottom: 20px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 12px 0;
       text-align: center;
-      position: relative;
-      flex-wrap: wrap;
-      gap: 12px;
-      letter-spacing: 0.15px;
+      margin-bottom: 16px;
+      padding: 12px 0;
+      gap: 10px;
+      width: 100%;
     }
 
-    .step-title i {
-      margin-right: 12px;
-      font-size: clamp(1em, 3vw, 1.3em);
-      color: #ECA02D;
-      background: rgba(236, 160, 45, 0.12);
-      padding: 12px;
-      border-radius: 50%;
+    .step-title .icon-container {
       width: 48px;
       height: 48px;
+      background: var(--brand);
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 2px 8px rgba(236, 160, 45, 0.2);
       flex-shrink: 0;
-      box-shadow: 0 2px 4px rgba(236, 160, 45, 0.2);
+      position: relative;
+      margin: 0 auto;
+    }
+
+    .step-title .icon-container i {
+      font-size: 20px;
+      color: white;
     }
 
     .step-title .status-indicator {
-      margin-left: clamp(8px, 2vw, 15px);
-      width: clamp(12px, 3vw, 15px);
-      height: clamp(12px, 3vw, 15px);
-      border-radius: 50%;
-      background: #E0E0E0;
-      transition: all 0.3s ease;
+      width: 70px;
+      height: 24px;
+      border-radius: 12px;
+      background: #f1f3f4;
+      transition: all 0.2s ease;
       flex-shrink: 0;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+      color: #5f6368;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 auto;
     }
 
     .step-title .status-indicator.active {
-      background: #ECA02D;
-      box-shadow: 0 0 10px rgba(236, 160, 45, 0.5);
-      animation: pulse 2s infinite;
+      background: var(--brand);
+      color: white;
+      box-shadow: 0 2px 8px rgba(236, 160, 45, 0.3);
     }
 
     .step-title .status-indicator.completed {
-      background: #4CAF50;
-      box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+      background: var(--success);
+      color: white;
+      box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
     }
 
     .step-title .status-indicator.completed::after {
@@ -187,18 +224,32 @@
       left: 50%;
       transform: translate(-50%, -50%);
       color: white;
-      font-size: 8px;
+      font-size: 12px;
       font-weight: bold;
+    }
+
+    .step-title .text {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.2px;
+      line-height: 1.3;
+      text-align: center;
+      width: 100%;
+    }
+
+    .step-container.completed .step-title .text {
+      color: var(--success);
     }
 
     #reader {
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-      padding: 16px;
+      padding: 12px;
       margin: 0 auto;
       width: 100%;
-      max-width: 350px;
+      max-width: 100%;
       border: 1px solid #E0E0E0;
       position: relative;
       overflow: hidden;
@@ -206,18 +257,22 @@
     }
 
     #reader video {
-      border-radius: 10px;
+      border-radius: 8px;
       width: 100%;
       height: auto;
-      max-height: 300px;
+      max-height: 250px;
       object-fit: cover;
+      box-sizing: border-box;
+      display: block;
     }
 
     #reader canvas {
-      border-radius: 10px;
+      border-radius: 8px;
       width: 100%;
       height: auto;
-      max-height: 300px;
+      max-height: 250px;
+      box-sizing: border-box;
+      display: block;
     }
 
     /* QR Scanner overlay styling */
@@ -249,17 +304,29 @@
       z-index: 9;
     }
 
+    /* Ensure QR scanner stays within container */
+    .step-container #reader {
+      max-width: 100%;
+      overflow: hidden;
+      margin: 0;
+      padding: 8px;
+    }
+
+    .step-container #reader * {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
     #selfieCam, #canvas {
-      border: 2px solid #ECA02D;
-      border-radius: 8px;
+      border: 2px solid var(--brand);
+      border-radius: 12px;
       background: #fff;
       width: 100%;
       max-width: 350px;
-      height: clamp(200px, 50vw, 250px);
+      height: 280px;
       object-fit: cover;
       box-sizing: border-box;
-      aspect-ratio: 4/5;
-      box-shadow: 0 2px 4px rgba(236, 160, 45, 0.2);
+      box-shadow: 0 2px 8px rgba(236, 160, 45, 0.15);
     }
 
     .preview-container {
@@ -271,94 +338,99 @@
     }
 
     #preview {
-      border: 2px solid #4CAF50;
-      border-radius: 8px;
+      border: 2px solid var(--success);
+      border-radius: 12px;
       max-width: 350px;
       width: 100%;
-      height: clamp(200px, 50vw, 250px);
+      height: 280px;
       object-fit: cover;
       box-sizing: border-box;
-      aspect-ratio: 4/5;
-      box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
+      box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
     }
 
     .btn {
-      background: #ECA02D;
-      color: #222222;
-      border: none;
+      background: #ffffff;
+      color: var(--text);
+      border: 1px solid #e1e5e9;
       font-weight: 500;
       font-size: 14px;
-      padding: 12px 24px;
-      border-radius: 4px;
+      padding: 14px 20px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+      transition: all 0.2s ease;
       margin: 8px 4px;
       min-width: 120px;
+      min-height: 48px;
       max-width: 100%;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       box-sizing: border-box;
       white-space: nowrap;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      text-transform: none;
+      letter-spacing: 0.3px;
       font-family: 'Roboto', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex: 1;
     }
 
     .btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-      background: #D68910;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(236, 160, 45, 0.4);
+      background: linear-gradient(135deg, var(--brand-dark) 0%, #C17A1A 100%);
     }
 
     .btn:active:not(:disabled) {
-      transform: translateY(0);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transform: scale(0.98);
+      box-shadow: 0 4px 16px rgba(236, 160, 45, 0.3);
     }
 
-    .btn:focus {
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(236, 160, 45, 0.3);
+    .btn:focus-visible {
+      outline: 3px solid rgba(236, 160, 45, 0.3);
+      outline-offset: 2px;
     }
 
     .btn:disabled {
-      opacity: 0.38;
+      opacity: 0.5;
       cursor: not-allowed;
       transform: none;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
     }
 
     .btn.secondary {
-      background: #757575;
+      background: var(--muted);
       color: #FFFFFF;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
     .btn.secondary:hover:not(:disabled) {
-      background: #616161;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      background: #5a5a5a;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
     }
 
     .btn.success {
-      background: #4CAF50;
+      background: var(--success);
       color: #FFFFFF;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
     .btn.success:hover:not(:disabled) {
       background: #388E3C;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
     }
 
     .btn.danger {
-      background: #F44336;
+      background: var(--error);
       color: #FFFFFF;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
     .btn.danger:hover:not(:disabled) {
       background: #D32F2F;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
     }
 
     .loading {
@@ -387,36 +459,37 @@
     #message {
       margin-top: 16px;
       padding: 16px;
-      border-radius: 4px;
-      font-weight: 400;
-      min-height: 48px;
+      border-radius: 12px;
+      font-weight: 500;
+      min-height: 52px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.4;
       word-break: break-word;
       box-sizing: border-box;
       position: relative;
       overflow: hidden;
+      border: 1px solid;
     }
 
     .message-success {
-      background: #E8F5E8;
+      background: rgba(76, 175, 80, 0.1);
       color: #2E7D32;
-      border-left: 4px solid #4CAF50;
+      border-color: rgba(76, 175, 80, 0.3);
     }
 
     .message-error {
-      background: #FFEBEE;
+      background: rgba(244, 67, 54, 0.1);
       color: #C62828;
-      border-left: 4px solid #F44336;
+      border-color: rgba(244, 67, 54, 0.3);
     }
 
     .message-info {
-      background: #FFF8E1;
+      background: rgba(236, 160, 45, 0.1);
       color: #F57C00;
-      border-left: 4px solid #ECA02D;
+      border-color: rgba(236, 160, 45, 0.3);
     }
 
     /* Success Popup Card Styles */
@@ -607,10 +680,10 @@
     .location-info {
       margin: 16px 0;
       padding: 20px;
-      background: #FFF8E1;
-      border: 1px solid #ECA02D;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(236, 160, 45, 0.15), 0 1px 2px rgba(236, 160, 45, 0.12);
+      background: rgba(236, 160, 45, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
       width: 100%;
       box-sizing: border-box;
     }
@@ -618,21 +691,21 @@
     .info-item {
       display: flex;
       align-items: center;
-      margin: clamp(8px, 2vw, 10px) 0;
-      padding: clamp(6px, 2vw, 8px) 0;
+      margin: 10px 0;
+      padding: 8px 0;
       flex-wrap: wrap;
-      gap: clamp(6px, 2vw, 8px);
+      gap: 12px;
     }
 
     .info-item i {
-      margin-right: clamp(8px, 2vw, 12px);
-      font-size: clamp(1em, 3vw, 1.2em);
-      color: #ECA02D;
+      margin-right: 12px;
+      font-size: 16px;
+      color: var(--brand);
       background: rgba(236, 160, 45, 0.1);
-      padding: clamp(6px, 2vw, 8px);
+      padding: 8px;
       border-radius: 50%;
-      width: clamp(28px, 7vw, 35px);
-      height: clamp(28px, 7vw, 35px);
+      width: 32px;
+      height: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -640,9 +713,9 @@
     }
 
     .info-item span {
-      font-size: clamp(0.9em, 2.5vw, 1.1em);
+      font-size: 14px;
       font-weight: 600;
-      color: #222222;
+      color: var(--text);
       line-height: 1.4;
       word-break: break-word;
     }
@@ -650,10 +723,10 @@
     .branch-selection {
       margin: 20px 0;
       padding: 20px;
-      background: #FFFFFF;
-      border: 1px solid #E0E0E0;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
       text-align: center;
       width: 100%;
       box-sizing: border-box;
@@ -661,54 +734,252 @@
 
     .branch-selection label {
       display: block;
-      font-size: clamp(1em, 3vw, 1.2em);
+      font-size: 16px;
       font-weight: 600;
-      color: #222222;
-      margin-bottom: clamp(10px, 3vw, 15px);
+      color: var(--text);
+      margin-bottom: 12px;
       line-height: 1.3;
     }
 
     .branch-dropdown {
-      padding: 12px 16px;
-      border: 1px solid #E0E0E0;
-      border-radius: 4px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
       font-size: 14px;
-      font-weight: 400;
-      color: #222222;
-      background: #FFFFFF;
+      font-weight: 500;
+      color: var(--text);
+      background: var(--card);
       cursor: pointer;
       width: 100%;
       max-width: 280px;
-      transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      transition: all 0.18s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
       box-sizing: border-box;
       font-family: 'Roboto', sans-serif;
     }
 
     .branch-dropdown:focus {
       outline: none;
-      border-color: #ECA02D;
-      box-shadow: 0 0 0 2px rgba(236, 160, 45, 0.3);
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(236, 160, 45, 0.2);
     }
 
     .branch-dropdown:hover {
-      border-color: #ECA02D;
-      box-shadow: 0 2px 4px rgba(236, 160, 45, 0.15);
+      border-color: var(--brand);
+      box-shadow: 0 4px 12px rgba(236, 160, 45, 0.1);
     }
 
-    @media (max-width: 600px) {
+    /* Large Mobile Phones (iPhone 12 Pro Max, Samsung Galaxy S21 Ultra, etc.) */
+    @media (max-width: 428px) {
       body {
-        padding: 8px;
-        background: linear-gradient(135deg, #F5F5F5 0%, #E0E0E0 100%);
+        padding: 6px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       }
 
       .container {
-        padding: 16px;
+        padding: 24px 20px;
         margin: 0;
-        border-radius: 12px;
+        border-radius: 20px;
         max-width: 100%;
         min-width: auto;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      }
+      
+      .header {
+        margin-bottom: 24px;
+      }
+      
+      .header h1 {
+        font-size: 24px;
+        margin-bottom: 8px;
+        line-height: 1.2;
+      }
+
+      .header p {
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--muted);
+      }
+      
+      .btn {
+        padding: 14px 18px;
+        font-size: 14px;
+        min-width: 120px;
+        margin: 6px 4px;
+        border-radius: 12px;
+        font-weight: 600;
+        min-height: 48px;
+      }
+
+      .step-container {
+        padding: 20px 16px;
+        margin: 12px 0;
+        border-radius: 16px;
+      }
+
+      .step-title {
+        margin-bottom: 16px;
+        padding: 10px 0;
+        gap: 10px;
+        width: 100%;
+      }
+
+      .step-title .icon-container {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto;
+      }
+
+      .step-title .icon-container i {
+        font-size: 20px;
+      }
+
+      .step-title .status-indicator {
+        width: 70px;
+        height: 24px;
+        border-radius: 12px;
+        font-size: 10px;
+        margin: 0 auto;
+      }
+
+      .step-title .text {
+        font-size: 16px;
+        text-align: center;
+        width: 100%;
+      }
+    }
+
+    /* Medium Mobile Phones (iPhone 12, Samsung Galaxy S21, etc.) */
+    @media (max-width: 390px) {
+      body {
+        padding: 4px;
+      }
+
+      .container {
+        padding: 20px 16px;
+        border-radius: 18px;
+      }
+      
+      .header h1 {
+        font-size: 22px;
+      }
+
+      .header p {
+        font-size: 13px;
+      }
+      
+      .btn {
+        padding: 12px 16px;
+        font-size: 13px;
+        min-height: 44px;
+      }
+
+      .step-container {
+        padding: 16px 12px;
+        margin: 10px 0;
+        border-radius: 14px;
+      }
+
+      .step-title {
+        margin-bottom: 14px;
+        padding: 8px 0;
+        gap: 8px;
+      }
+
+      .step-title .icon-container {
+        width: 44px;
+        height: 44px;
+      }
+
+      .step-title .icon-container i {
+        font-size: 18px;
+      }
+
+      .step-title .status-indicator {
+        width: 64px;
+        height: 22px;
+        border-radius: 11px;
+        font-size: 9px;
+      }
+
+      .step-title .text {
+        font-size: 15px;
+      }
+    }
+
+    /* Small Mobile Phones (iPhone SE, Samsung Galaxy A51, etc.) */
+    @media (max-width: 375px) {
+      body {
+        padding: 3px;
+      }
+
+      .container {
+        padding: 18px 14px;
+        border-radius: 16px;
+      }
+      
+      .header {
+        margin-bottom: 20px;
+      }
+      
+      .header h1 {
+        font-size: 20px;
+        margin-bottom: 6px;
+      }
+
+      .header p {
+        font-size: 12px;
+      }
+      
+      .btn {
+        padding: 12px 14px;
+        font-size: 12px;
+        min-height: 42px;
+        letter-spacing: 0.5px;
+      }
+
+      .step-container {
+        padding: 14px 10px;
+        margin: 8px 0;
+        border-radius: 12px;
+      }
+
+      .step-title {
+        margin-bottom: 12px;
+        padding: 6px 0;
+        gap: 6px;
+      }
+
+      .step-title .icon-container {
+        width: 40px;
+        height: 40px;
+      }
+
+      .step-title .icon-container i {
+        font-size: 16px;
+      }
+
+      .step-title .status-indicator {
+        width: 58px;
+        height: 20px;
+        border-radius: 10px;
+        font-size: 8px;
+      }
+
+      .step-title .text {
+        font-size: 14px;
+      }
+    }
+
+    /* Extra Small Mobile Phones (iPhone 5/SE 1st gen, etc.) */
+    @media (max-width: 320px) {
+      body {
+        padding: 2px;
+      }
+
+      .container {
+        padding: 16px 12px;
+        border-radius: 14px;
       }
       
       .header {
@@ -716,134 +987,192 @@
       }
       
       .header h1 {
-        font-size: 1.6em;
-        margin-bottom: 6px;
-        line-height: 1.1;
+        font-size: 18px;
+        margin-bottom: 4px;
       }
 
       .header p {
-        font-size: 0.95em;
-        line-height: 1.3;
-        color: #666666;
+        font-size: 11px;
       }
       
       .btn {
-        padding: 12px 20px;
-        font-size: 14px;
-        min-width: 120px;
-        margin: 6px 4px;
-        border-radius: 4px;
-        font-weight: 500;
+        padding: 10px 12px;
+        font-size: 11px;
+        min-height: 40px;
+        letter-spacing: 0.3px;
       }
 
       .step-container {
-        padding: 20px 16px;
-        margin: 12px 0;
-        border-radius: 8px;
-        border-width: 1px;
+        padding: 12px 8px;
+        margin: 6px 0;
+        border-radius: 10px;
       }
 
       .step-title {
-        font-size: 1.1em;
-        margin-bottom: 16px;
-        padding: 8px 0;
-        flex-direction: row;
-        gap: 10px;
-        flex-wrap: nowrap;
+        margin-bottom: 10px;
+        padding: 4px 0;
+        gap: 4px;
       }
 
-      .step-title i {
-        margin-right: 10px;
-        font-size: 1.1em;
-        width: 32px;
-        height: 32px;
-        padding: 6px;
+      .step-title .icon-container {
+        width: 36px;
+        height: 36px;
+      }
+
+      .step-title .icon-container i {
+        font-size: 14px;
       }
 
       .step-title .status-indicator {
-        margin-left: 10px;
-        width: 12px;
-        height: 12px;
+        width: 52px;
+        height: 18px;
+        border-radius: 9px;
+        font-size: 7px;
+      }
+
+      .step-title .text {
+        font-size: 13px;
       }
 
       #reader {
-        padding: 12px;
-        border-radius: 12px;
-        border-width: 1.5px;
+        padding: 8px;
+        border-radius: 8px;
       }
 
       #selfieCam, #canvas, #preview {
-        height: 280px;
-        border-radius: 12px;
-        border-width: 2px;
+        height: 200px;
+        border-radius: 8px;
       }
 
       .location-info {
-        padding: 16px;
-        margin: 12px 0;
-        border-radius: 12px;
+        padding: 10px;
+        margin: 6px 0;
+        border-radius: 8px;
       }
 
       .info-item {
-        margin: 8px 0;
-        padding: 6px 0;
-        gap: 10px;
+        margin: 4px 0;
+        padding: 3px 0;
+        gap: 6px;
       }
 
       .info-item i {
-        width: 30px;
-        height: 30px;
-        padding: 6px;
-        font-size: 1em;
+        width: 24px;
+        height: 24px;
+        padding: 4px;
+        font-size: 12px;
       }
 
       .info-item span {
-        font-size: 0.95em;
-        line-height: 1.3;
+        font-size: 12px;
       }
 
       .branch-selection {
-        padding: 16px;
-        margin: 16px 0;
-        border-radius: 12px;
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 8px;
       }
 
       .branch-selection label {
-        font-size: 1em;
-        margin-bottom: 12px;
-      }
-
-      .branch-dropdown {
-        padding: 12px 16px;
-        font-size: 0.95em;
-        border-radius: 8px;
-        border-width: 1.5px;
-      }
-
-
-
-      #message {
-        margin-top: 16px;
-        padding: 12px 16px;
-        border-radius: 8px;
-        font-size: 0.9em;
-        line-height: 1.3;
-      }
-
-      .retry-section {
-        margin-top: 16px;
-        padding: 16px;
-        border-radius: 12px;
-      }
-
-      .retry-section h4 {
-        font-size: 1em;
+        font-size: 13px;
         margin-bottom: 8px;
       }
 
+      .branch-dropdown {
+        padding: 10px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+      }
+
+      #message {
+        margin-top: 8px;
+        padding: 8px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        min-height: 36px;
+      }
+
+      .retry-section {
+        margin-top: 8px;
+        padding: 10px;
+        border-radius: 8px;
+      }
+
+      .retry-section h4 {
+        font-size: 13px;
+        margin-bottom: 4px;
+      }
+
       .retry-section p {
-        font-size: 0.9em;
+        font-size: 11px;
+        margin-bottom: 8px;
+      }
+    }
+
+    /* Landscape Mobile Optimization */
+    @media (max-height: 500px) and (orientation: landscape) {
+      body {
+        padding: 4px;
+      }
+
+      .container {
+        padding: 16px 20px;
+        max-height: 100vh;
+        overflow-y: auto;
+      }
+
+      .header {
         margin-bottom: 12px;
+      }
+
+      .header h1 {
+        font-size: 20px;
+        margin-bottom: 4px;
+      }
+
+      .header p {
+        font-size: 12px;
+      }
+
+      .step-container {
+        padding: 12px 16px;
+        margin: 8px 0;
+      }
+
+      .step-title {
+        margin-bottom: 8px;
+        padding: 4px 0;
+        gap: 6px;
+      }
+
+      .step-title .icon-container {
+        width: 32px;
+        height: 32px;
+      }
+
+      .step-title .icon-container i {
+        font-size: 14px;
+      }
+
+      .step-title .status-indicator {
+        width: 48px;
+        height: 16px;
+        border-radius: 8px;
+        font-size: 7px;
+      }
+
+      .step-title .text {
+        font-size: 12px;
+      }
+
+      #selfieCam, #canvas, #preview {
+        height: 160px;
+      }
+
+      .btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 36px;
       }
     }
 
@@ -1127,6 +1456,7 @@
 <body>
   <div class="container">
     <div class="header">
+      <div class="clock" id="clock">00:00:00</div>
       <h1><i class="fas fa-qrcode"></i> Attendance System</h1>
       <p>Scan QR Code & Capture Selfie for Attendance</p>
     </div>
@@ -1134,42 +1464,52 @@
     <!-- Step 1: QR Scanner -->
     <div id="qrStep" class="step-container active">
       <div class="step-title">
-        <i class="fas fa-qrcode"></i>
-        <span class="status-indicator active"></span>
-        Step 1: Scan QR Code
+        <div class="icon-container">
+          <i class="fas fa-qrcode"></i>
+        </div>
+        <span class="status-indicator active">Ready</span>
+        <div class="text">Step 1: Scan QR Code</div>
       </div>
       <div id="reader"></div>
-      <button id="retryQrBtn" class="btn secondary hidden">
-        <i class="fas fa-redo"></i> Retry QR Scan
-      </button>
+      <div style="display: flex; gap: 12px; width: 100%;">
+        <button id="retryQrBtn" class="btn secondary hidden">
+          <i class="fas fa-redo"></i> Retry QR Scan
+        </button>
+      </div>
     </div>
 
     <!-- Step 2: Selfie Capture -->
     <div id="selfieStep" class="step-container">
       <div class="step-title">
-        <i class="fas fa-camera"></i>
-        <span class="status-indicator"></span>
-        Step 2: Take Selfie
+        <div class="icon-container">
+          <i class="fas fa-camera"></i>
+        </div>
+        <span class="status-indicator">Waiting</span>
+        <div class="text">Step 2: Take Selfie</div>
       </div>
       <video id="selfieCam" autoplay muted playsinline webkit-playsinline></video>
       <canvas id="canvas" class="hidden"></canvas>
       <div class="preview-container hidden" id="previewContainer">
         <img id="preview" alt="Selfie Preview">
       </div>
-      <button id="captureBtn" class="btn" disabled>
-        <i class="fas fa-camera"></i> Take Selfie
-      </button>
-      <button id="retakeBtn" class="btn secondary hidden">
-        <i class="fas fa-redo"></i> Retake
-      </button>
+      <div style="display: flex; gap: 12px; width: 100%;">
+        <button id="captureBtn" class="btn" disabled>
+          <i class="fas fa-camera"></i> Take Selfie
+        </button>
+        <button id="retakeBtn" class="btn secondary hidden">
+          <i class="fas fa-redo"></i> Retake
+        </button>
+      </div>
     </div>
 
     <!-- Step 3: Submit -->
     <div id="submitStep" class="step-container">
       <div class="step-title">
-        <i class="fas fa-paper-plane"></i>
-        <span class="status-indicator"></span>
-        Step 3: Submit Attendance
+        <div class="icon-container">
+          <i class="fas fa-paper-plane"></i>
+        </div>
+        <span class="status-indicator">Waiting</span>
+        <div class="text">Step 3: Submit Attendance</div>
       </div>
       <div id="locationInfo" class="location-info hidden">
         <div class="info-item">
@@ -1191,12 +1531,14 @@
           <option value="">Loading branches...</option>
         </select>
       </div>
-      <button id="submitBtn" class="btn success" disabled>
-        <i class="fas fa-check"></i> Submit Attendance
-      </button>
-      <button id="resetBtn" class="btn secondary">
-        <i class="fas fa-refresh"></i> Start Over
-      </button>
+      <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+        <button id="submitBtn" class="btn success" disabled>
+          <i class="fas fa-check"></i> Submit Attendance
+        </button>
+        <button id="resetBtn" class="btn secondary">
+          <i class="fas fa-refresh"></i> Start Over
+        </button>
+      </div>
     </div>
 
     <!-- Message Display -->
@@ -1206,9 +1548,11 @@
     
     <!-- Location Permission Button (iOS) -->
     <div id="locationPermissionBtn" class="location-permission-btn hidden">
-      <button id="requestLocationBtn" class="btn secondary">
-        <i class="fas fa-map-marker-alt"></i> Enable Location Access
-      </button>
+      <div style="display: flex; gap: 12px; width: 100%;">
+        <button id="requestLocationBtn" class="btn secondary">
+          <i class="fas fa-map-marker-alt"></i> Enable Location Access
+        </button>
+      </div>
       <p class="location-help-text">Location helps validate your attendance. Please enable location services.</p>
     </div>
 
@@ -1216,12 +1560,14 @@
     <div id="retrySection" class="retry-section hidden">
       <h4><i class="fas fa-exclamation-triangle"></i> Submission Failed</h4>
       <p>Would you like to retry?</p>
-      <button id="retrySubmitBtn" class="btn">
-        <i class="fas fa-redo"></i> Retry
-      </button>
-      <button id="cancelRetryBtn" class="btn secondary">
-        <i class="fas fa-times"></i> Cancel
-      </button>
+      <div style="display: flex; gap: 12px; width: 100%;">
+        <button id="retrySubmitBtn" class="btn">
+          <i class="fas fa-redo"></i> Retry
+        </button>
+        <button id="cancelRetryBtn" class="btn secondary">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+      </div>
     </div>
 
   </div>
@@ -1580,14 +1926,7 @@
       
       elements.captureBtn.classList.add('hidden');
       elements.retakeBtn.classList.remove('hidden');
-      
-      // Only enable submit button if location is available
-      if (userLocation && userLocation.latitude !== 0 && userLocation.longitude !== 0) {
-        elements.submitBtn.disabled = false;
-      } else {
-        elements.submitBtn.disabled = true;
-        showMessage('Location access required. Please enable location services.', 'error');
-      }
+      elements.submitBtn.disabled = false;
       
       elements.selfieStep.classList.remove('active');
       elements.selfieStep.classList.add('completed');
@@ -1709,8 +2048,6 @@
         let errorMessage = 'Submission failed';
         if (error.includes('Rate limit')) {
           errorMessage = 'Too many submissions. Please wait a moment and try again.';
-        } else if (error.includes('Location data is required')) {
-          errorMessage = 'Location access is required for attendance. Please enable location services in your browser settings and try again.';
         } else if (error.includes('Validation failed')) {
           errorMessage = error;
         } else if (error.includes('Network error')) {
@@ -1786,6 +2123,11 @@
       scannedId = '';
       selfieData = '';
       retryCount = 0;
+      
+      // Show all steps again
+      elements.qrStep.style.display = 'block';
+      elements.selfieStep.style.display = 'block';
+      elements.submitStep.style.display = 'block';
       
       // Reset UI
       elements.qrStep.classList.remove('completed');
@@ -1891,6 +2233,11 @@
       document.getElementById('popupId').textContent = userInfo.id;
       document.getElementById('popupTime').textContent = formattedTime;
 
+      // Collapse all steps
+      elements.qrStep.style.display = 'none';
+      elements.selfieStep.style.display = 'none';
+      elements.submitStep.style.display = 'none';
+
       // Show popup
       document.getElementById('successPopup').classList.remove('hidden');
     }
@@ -1936,9 +2283,6 @@
         elements.branchText.textContent = 'Branch: Unknown';
         elements.distanceText.textContent = 'Distance: Unknown';
         elements.locationInfo.classList.add('hidden');
-        
-        // Disable submit button when location is not available
-        elements.submitBtn.disabled = true;
         
         // Show location permission button for iOS if location is not available
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -2004,15 +2348,6 @@
 
     function validateAndSubmit() {
       const selectedBranch = elements.branchSelect.value;
-      
-      // Check if location is available and valid
-      if (!userLocation || !userLocation.latitude || !userLocation.longitude ||
-          userLocation.latitude === 0 || userLocation.longitude === 0) {
-        elements.submitBtn.disabled = true;
-        showMessage('Location access is required. Please enable location services.', 'error');
-        return;
-      }
-      
       if (selectedBranch && userLocation) {
         validateLocation(selectedBranch);
       }
@@ -2164,12 +2499,11 @@
         errors.push('Branch selection is required');
       }
       
-      // Validate Location (required for attendance)
+      // Validate Location (optional but warn if missing)
       if (!data.location) {
-        errors.push('Location data is required for attendance');
-      } else if (!data.location.latitude || !data.location.longitude ||
-                 data.location.latitude === 0 || data.location.longitude === 0) {
-        errors.push('Valid location coordinates are required. Please enable location services and try again.');
+        console.warn('Location data is missing');
+      } else if (data.location.latitude === 0 && data.location.longitude === 0) {
+        console.warn('Location coordinates are invalid');
       }
       
       if (errors.length > 0) {
@@ -2219,6 +2553,23 @@
         form.parentNode.removeChild(form);
       }
     }
+
+    // Clock function
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const timeString = `${hours}:${minutes}:${seconds}`;
+      
+      const clockElement = document.getElementById('clock');
+      if (clockElement) {
+        clockElement.textContent = timeString;
+      }
+    }
+
+    // Update clock every second
+    setInterval(updateClock, 1000);
 
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', initApp);
