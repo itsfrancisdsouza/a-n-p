@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Attendance System - QR & Selfie</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ECA02D">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -57,7 +55,100 @@
       overflow: hidden;
     }
 
+    /* Hamburger Menu Styles */
+    .hamburger-menu {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1001;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
 
+    .hamburger-btn {
+      background: var(--brand);
+      border: none;
+      border-radius: 50%;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(236, 160, 45, 0.3);
+      transition: all 0.3s ease;
+      color: white;
+      font-size: 20px;
+    }
+
+    .hamburger-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(236, 160, 45, 0.4);
+      background: var(--brand-dark);
+    }
+
+    .hamburger-btn:active {
+      transform: scale(0.95);
+    }
+
+    .menu-label {
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    .hamburger-btn:hover + .menu-label,
+    .hamburger-btn:focus + .menu-label {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Mobile responsive adjustments for hamburger menu */
+    @media (max-width: 480px) {
+      .hamburger-menu {
+        top: 16px;
+        right: 16px;
+      }
+
+      .hamburger-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 18px;
+      }
+
+      .menu-label {
+        font-size: 11px;
+        padding: 4px 10px;
+      }
+    }
+
+    @media (max-width: 375px) {
+      .hamburger-menu {
+        top: 12px;
+        right: 12px;
+      }
+
+      .hamburger-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 16px;
+      }
+
+      .menu-label {
+        font-size: 10px;
+        padding: 3px 8px;
+      }
+    }
 
     .header {
       margin-bottom: 32px;
@@ -78,66 +169,6 @@
       font-size: 14px;
       line-height: 1.4;
       font-weight: 400;
-    }
-
-    .pwa-install-banner {
-      background: linear-gradient(135deg, var(--brand), var(--brand-dark));
-      color: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 8px rgba(236, 160, 45, 0.3);
-    }
-
-    .pwa-install-banner.show {
-      display: flex;
-    }
-
-    .pwa-install-banner .text {
-      font-size: 14px;
-      font-weight: 500;
-    }
-
-    .pwa-install-btn {
-      background: white;
-      color: var(--brand);
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .pwa-install-btn:hover {
-      background: #f8f9fa;
-      transform: translateY(-1px);
-    }
-
-    .network-status {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      padding: 8px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 500;
-      z-index: 1000;
-      transition: all 0.3s ease;
-    }
-
-    .network-status.online {
-      background: var(--success);
-      color: white;
-    }
-
-    .network-status.offline {
-      background: var(--error);
-      color: white;
     }
 
     .clock {
@@ -1660,23 +1691,15 @@
   </style>
 </head>
 <body>
-  <!-- Network Status Indicator -->
-  <div class="network-status online" id="networkStatus">
-    <i class="fas fa-wifi"></i> Online
+  <!-- Hamburger Menu -->
+  <div class="hamburger-menu">
+    <button class="hamburger-btn" onclick="openAttendanceLog()" title="Attendance Log">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="menu-label">Attendance Log</div>
   </div>
 
   <div class="container">
-    <!-- PWA Install Banner -->
-    <div class="pwa-install-banner" id="pwaInstallBanner">
-      <div class="text">
-        <i class="fas fa-download"></i>
-        Add to Home Screen for the best experience!
-      </div>
-      <button class="pwa-install-btn" id="pwaInstallBtn">
-        Install App
-      </button>
-    </div>
-
     <div class="header">
       <div class="clock" id="clock">00:00:00</div>
       <h1><i class="fas fa-qrcode"></i> Attendance System</h1>
@@ -1925,6 +1948,12 @@
       fetchStaffDatabase(); // Fetch staff database
       
 
+    }
+
+    // Function to open attendance log in new tab
+    function openAttendanceLog() {
+      const logUrl = 'https://itsfrancisdsouza.github.io/a-n-p/aLog.html';
+      window.open(logUrl, '_blank');
     }
 
     // Get user location with iOS-specific handling
@@ -3020,79 +3049,6 @@
 
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', initApp);
-  </script>
-  
-  <script>
-    // PWA Install Prompt and Network Detection
-    let deferredPrompt;
-    const pwaInstallBanner = document.getElementById('pwaInstallBanner');
-    const pwaInstallBtn = document.getElementById('pwaInstallBtn');
-    const networkStatus = document.getElementById('networkStatus');
-
-    // Network status detection
-    function updateNetworkStatus() {
-      if (navigator.onLine) {
-        networkStatus.className = 'network-status online';
-        networkStatus.innerHTML = '<i class="fas fa-wifi"></i> Online';
-      } else {
-        networkStatus.className = 'network-status offline';
-        networkStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Offline';
-      }
-    }
-
-    // Listen for network changes
-    window.addEventListener('online', updateNetworkStatus);
-    window.addEventListener('offline', updateNetworkStatus);
-    updateNetworkStatus();
-
-    // PWA Install prompt
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      
-      // Show install banner
-      pwaInstallBanner.classList.add('show');
-      
-      // Hide banner after 10 seconds
-      setTimeout(() => {
-        pwaInstallBanner.classList.remove('show');
-      }, 10000);
-    });
-
-    // Install button click handler
-    pwaInstallBtn.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        
-        if (outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-          pwaInstallBanner.classList.remove('show');
-        } else {
-          console.log('User dismissed the install prompt');
-        }
-        deferredPrompt = null;
-      }
-    });
-
-    // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      // App is running in standalone mode (installed)
-      pwaInstallBanner.style.display = 'none';
-    }
-
-    // Service Worker Registration
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./service-worker.js')
-          .then(function(reg) {
-            console.log('Service worker registered!', reg);
-          })
-          .catch(function(err) {
-            console.error('Service worker failed:', err);
-          });
-      });
-    }
   </script>
 </body>
 </html>
