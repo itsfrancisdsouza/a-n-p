@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Attendance Log</title>
+  <style>
+    body { 
+      font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; 
+      background: linear-gradient(125deg,#f5ffe7 70%, #f9edfc 100%);
+      min-height: 100vh;
+      margin: 0; padding: 0;
+      color: #232f3e;
+      letter-spacing: 0.01em;
+      -webkit-font-smoothing: antialiased; 
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .main-content {
+      max-width: 560px;
+      margin: 36px auto 0 auto;
+      background: rgba(255,255,255,0.85);
+      border-radius: 26px;
+      box-shadow: 0 8px 34px #bab5e637, 0 2px 5px #f7d3a884;
+      padding: 32px 22px 12px 22px;
+      min-height: 60vh;
+    }
+
+    .dashboard {
+      display: flex; 
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      background: transparent;
+      padding: 8px 0 4px 0;
+    }
+
+    .filter-bar {
+      background: rgba(255,255,255,0.95);
+      border-radius: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-bottom:18px;
+      box-shadow: 0 1px 10px #eadfba22;
+      padding: 10px 16px;
+      align-items: center;
+    }
+
+    .filter-bar label {
+      font-size: 1em;
+      font-weight: 500;
+      margin: 8px 0;
+    }
+
+    select, input[type="date"] {
+      padding: 8px 18px;
+      border-radius: 14px;
+      border: none;
+      background: #f5f7fb;
+      font-size: 1.1em;
+      margin-left: 8px;
+      box-shadow: 0 2px 7px #e2cfd622;
+    }
+
+    select:focus, input[type="date"]:focus { 
+      outline: 2px solid #f0d75d;
+    }
+
+    .dash-card {
+      background: rgba(255,255,255,0.88);
+      border-radius: 13px;
+      min-width: 82px; 
+      padding: 7px 0 4px 0;
+      box-shadow: 0 1.5px 12px #eedeac14;
+      display: flex; 
+      flex-direction: column; 
+      align-items: center;
+      border: none;
+      margin-bottom:2px;
+    }
+
+    .dash-label {
+      color: #c5b88c;
+      font-size: 0.92em;
+      line-height: 1.2;
+      margin-bottom: 1px;
+    }
+
+    .dash-value {
+      font-size: 1.22em; 
+      font-weight: 700; 
+      color:#222; 
+      letter-spacing: 0.03em;
+      margin-bottom: 2px;
+    }
+
+    /* Fade-in animation for dashboard cards */
+    .dash-card {
+      animation: fadeInUp 0.6s ease-out forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .dash-card:nth-child(1) { animation-delay: 0.1s; }
+    .dash-card:nth-child(2) { animation-delay: 0.2s; }
+    .dash-card:nth-child(3) { animation-delay: 0.3s; }
+    .dash-card:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    table {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-radius: 16px;
+      margin-top: 0.5em;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 14px 10px;
+      font-size: 1em;
+      border-bottom: 2px solid #f5f1df;
+    }
+    th { 
+      background: #f1eadf99; 
+      font-weight: 700; 
+      color:#856929; 
+      border-top-left-radius: 13px; 
+      border-top-right-radius: 13px;
+    }
+
+    tbody tr {
+      background: #fff; 
+      border-bottom: 1px solid #f1ecde;
+      border-radius: 11px;
+      box-shadow: 0 2px 12px #cbd1dc1a;
+      margin-bottom: 11px;
+      transition: box-shadow 0.14s;
+    }
+    tbody tr:hover {
+      background: #faf9ff;
+      box-shadow: 0 4px 18px #e6d3db33, 0 1px 10px #d0cfe743;
+    }
+
+    .status-badge {
+      border-radius: 999px;
+      font-size: 1em;
+      font-weight: 600;
+      padding: 5px 18px;
+      box-shadow: 0 1px 3px #dbefa921;
+      letter-spacing: 0.01em;
+    }
+    .status-Present { background: #e6f9ef; color: #22c55e;}
+    .status-HalfDay { background: #faf5e7; color: #f5a524;}
+    .status-First,.status-FirstLog { background: #f2f8ff; color: #3596e7;}
+    .status-Absent { background: #ffeef5; color: #f44336;}
+
+    .modal-bg {
+      background:rgba(36,28,64,0.24);
+      display: none; 
+      position:fixed; 
+      z-index:1100; 
+      left:0; 
+      top:0; 
+      width:100vw; 
+      height:100vh;
+      align-items: center; 
+      justify-content: center;
+    }
+    .modal-bg.show {display:flex;}
+    .modal-card {
+      background: rgba(255,255,255,0.98);
+      border-radius: 22px;
+      min-width: 260px;
+      max-width: 98vw;
+      box-shadow: 0 10px 64px #00000022, 0 4px 14px #fdf4da44;
+      padding: 32px 20px;
+      font-size:1.09em;
+      animation: popIn 0.26s cubic-bezier(.44,1.38,.75,1.01) 1;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.9) translateY(28px); opacity: 0.1;}
+      to { transform: scale(1) translateY(0); opacity: 1;}
+    }
+    .close-modal {
+      border: none; 
+      background: #f5f6fa; 
+      color: #333;
+      border-radius: 999px;
+      font-size: 2.1em;
+      float:right;
+      margin-left:10px;
+      min-width: 40px;
+      min-height: 40px;
+      box-shadow: 0 2px 9px #ede8c571;
+      cursor: pointer;
+    }
+
+    .empty {
+      padding: 50px 0 35px 0;
+      color: #b6b7b6; 
+      text-align: center;
+      font-size: 1.2em; 
+      font-family:'Inter',sans-serif;
+      letter-spacing: 0.04em;
+    }
+
+    /* Export Button */
+    .export-btn {
+      background: linear-gradient(85deg, #faeae2 60%, #f0d75d 150%);
+      box-shadow: 0 1px 8px #f5b97525;
+      border: none; 
+      font-weight: 600;
+      border-radius: 14px; 
+      min-height: 44px;
+      padding: 7px 24px; 
+      font-size: 1.05em;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    .export-btn:hover { 
+      background: #fefaef;
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width:600px) {
+      .main-content { 
+        border-radius:9vw; 
+        padding: 11vw 2vw 2vw 2vw; 
+        margin:15px 0;
+      }
+      .dashboard { 
+        gap:3px;
+        overflow-x: auto; 
+        flex-wrap: nowrap;
+        padding: 7px 0 0 0;
+        scrollbar-width: none;
+      }
+      .dashboard::-webkit-scrollbar { height: 0;}
+      .dash-card { 
+        min-width: 80px; 
+        max-width:115px; 
+        font-size: .97em; 
+        padding: 7px 0; 
+        margin-right:3vw; 
+        margin-bottom:0;
+      }
+      .filter-bar { 
+        flex-direction:column; 
+        gap:7px;
+      }
+      .modal-card { 
+        padding:14px 7vw; 
+        min-width: unset;
+      }
+      table th, table td { 
+        font-size: .94em; 
+        padding: 9px 5vw;
+      }
+    }
+
+    /* Mobile Card-Style Table */
+    @media (max-width:520px) {
+      thead { display:none; }
+      tbody tr { 
+        display:block; 
+        background:#fff; 
+        margin-bottom:10px; 
+        border-radius:16px; 
+        box-shadow:0 1.5px 12px #ebd46f22; 
+        padding: 10px 2vw; 
+        transition: box-shadow .15s;
+      }
+      tbody tr:hover {
+        box-shadow:0 3px 20px #ebd46f44;
+      }
+      tbody td { 
+        display:block; 
+        width:100%; 
+        border:none; 
+        padding:5px 2vw!important;
+        position: relative;
+      }
+      tbody td:nth-child(1)::before {content: "Staff ID: "; color: #bba453; font-weight: 600; margin-right: 8px;}
+      tbody td:nth-child(2)::before {content: "Name: "; color: #bba453; font-weight: 600; margin-right: 8px;}
+      tbody td:nth-child(3)::before {content: "Status: "; color: #bba453; font-weight: 600; margin-right: 8px;}
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar{width:9px;}
+    ::-webkit-scrollbar-thumb{background:#f5eca7;border-radius:9px;}
+    ::-webkit-scrollbar-track{background:#faf8ed;}
+  </style>
+</head>
+<body>
+  <div class="main-content">
+    <div class="dashboard">
+      <div class="dash-card" id="presentCount">
+        <span style="font-size:1.2em;color:#22c55e;">✔️</span>
+        <div class="dash-label">Present</div>
+        <div class="dash-value">0</div>
+      </div>
+      <div class="dash-card" id="halfdayCount">
+        <span style="font-size:1.2em;color:#f5a524;">⏰</span>
+        <div class="dash-label">Half Day</div>
+        <div class="dash-value">0</div>
+      </div>
+      <div class="dash-card" id="firstlogCount">
+        <span style="font-size:1.2em;color:#3596e7;">📝</span>
+        <div class="dash-label">First Log</div>
+        <div class="dash-value">0</div>
+      </div>
+      <div class="dash-card" id="absentCount">
+        <span style="font-size:1.2em;color:#f44336;">❌</span>
+        <div class="dash-label">Absent</div>
+        <div class="dash-value">0</div>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <label>Branch:
+        <select id="branch">
+          <option value="">Choose branch...</option>
+        </select>
+      </label>
+      <label>Date:
+        <input type="date" id="date"/>
+      </label>
+    </div>
+    <table id="log-table" aria-label="Attendance table">
+      <thead>
+        <tr><th>Staff ID</th><th>Name</th><th>Status</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div style="text-align: center; margin: 16px 0;">
+      <button id="exportBtn" class="export-btn">📊 Export as CSV</button>
+    </div>
+    <canvas id="statusPie" width="250" height="140" style="margin:16px auto;display:block;"></canvas>
+    <div class="empty" id="empty" style="display:none;"></div>
+  </div>
+  <div class="modal-bg" id="modal" role="dialog" aria-modal="true" tabindex="-1"><div class="modal-card" id="modal-card"></div></div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+const LOG_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTktOv0rOPllFSkl7K5aVOx9gb_xsXF8F-MSj04RHmXMQHmzxAI_KL6VN-_38WG5mI0Gkh62ls1TXKA/pub?gid=2054072101&single=true&output=csv";    // Your attendance log CSV
+const STAFF_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTktOv0rOPllFSkl7K5aVOx9gb_xsXF8F-MSj04RHmXMQHmzxAI_KL6VN-_38WG5mI0Gkh62ls1TXKA/pub?gid=0&single=true&output=csv";   // Your staff database CSV
+let logData = [], staffMap = {}, staffList = [];
+
+function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    return lines.map(line => {
+      let row = [], cur = '', inQ = false;
+      for (let i = 0; i < line.length; ++i) {
+        const c = line[i];
+        if (c == '"') inQ = !inQ;
+        else if (c == ',' && !inQ) { row.push(cur); cur = ''; }
+        else cur += c;
+      }
+      row.push(cur);
+      return row.map(x => x.trim());
+    });
+}
+function todayISO() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().slice(0,10);
+}
+function idx(headers, match) {
+  match = match.replace(/[\s\-_]+/gi, '').toLowerCase();
+  for (let i=0; i<headers.length; i++) {
+    let col = (headers[i] || '').replace(/[\s\-_]+/gi, '').toLowerCase();
+    if(col === match) return i;
+  }
+  // Try partial match as fallback (rarely)
+  for (let i=0; i<headers.length; i++) {
+    let col = (headers[i] || '').replace(/[\s\-_]+/gi, '').toLowerCase();
+    if(col.includes(match)) return i;
+  }
+  return -1;
+}
+function normalize(str) {
+  return (str||"").replace(/[\s\-_]+/gi,'').toLowerCase();
+}
+
+function minutesDiff(t1, t2) {
+  // t1, t2 are strings like "10:30:25"
+  let [h1, m1] = t1.split(':').map(Number);
+  let [h2, m2] = t2.split(':').map(Number);
+  return (h2*60 + m2) - (h1*60 + m1);
+}
+
+function getLogEntriesForBranchDate(branchVal, dateVal) {
+  const bIdx = idx(logData[0], "branch"),
+        dIdx = idx(logData[0], "date"),
+        staffIdIdx = idx(logData[0], "staff id"),
+        nameIdx = idx(logData[0], "name"),
+        logIdIdx = idx(logData[0], "log id"),
+        timeIdx = idx(logData[0], "time");
+  return logData.slice(1).filter(row =>
+    row[bIdx] && row[dIdx] &&
+    normalize(row[bIdx]) === normalize(branchVal) &&
+    row[dIdx].trim() === dateVal.trim()
+  );
+}
+
+function getActiveStaffIds() {
+  // Build a set of Active/Activated staff IDs from staff-db
+  return new Set(staffList.filter(emp =>
+    ["activated","active"].includes(emp.status.trim().toLowerCase())
+  ).map(emp => emp.id));
+}
+
+function renderTable() {
+  const tbody = document.querySelector("tbody");
+  tbody.innerHTML = "";
+  document.getElementById("empty").textContent = "";
+  document.getElementById("empty").style.display = "none";
+
+  const branchVal = document.getElementById('branch').value;
+  const dateVal = document.getElementById('date').value;
+  if (!branchVal || !dateVal) {
+    document.getElementById("empty").textContent = "Please select both branch and date.";
+    document.getElementById("empty").style.display = "";
+    return;
+  }
+  
+  // All log entries for branch+date
+  const logsToday = getLogEntriesForBranchDate(branchVal, dateVal);
+  const actives = getActiveStaffIds();
+  
+  if (!logsToday.length) {
+    document.getElementById("empty").textContent = "No logs found for this branch/date.";
+    document.getElementById("empty").style.display = "";
+    return;
+  }
+  
+  // Group logs by staff ID
+  const byStaff = {};
+  logsToday.forEach(log => {
+    const sid = log[idx(logData[0], "staff id")];
+    if (!actives.has(sid)) return; // Only consider ACTIVE staff
+    if (!byStaff[sid]) byStaff[sid] = [];
+    byStaff[sid].push(log);
+  });
+
+  // For each active staff with logs for branch/date
+  let count = 0;
+  let countPresent = 0, countHalfDay = 0, countFirstLog = 0, countAbsent = 0;
+  
+  for (const sid in byStaff) {
+    const logs = byStaff[sid];
+    // Get name from staff database using staff ID
+    const empObj = staffList.find(e => e.id === sid);
+    const name = empObj ? empObj.name : '-';
+    // For Log ID, list each (show first or all as needed)
+    const logIds = logs.map(row => row[idx(logData[0], "log id")]).join(', ');
+    // Status: determine by business logic based on log entries and time gaps
+    let status = "Absent";
+    if (logs.length === 1) {
+      status = "First Log"; 
+      countFirstLog++;
+    } else if (logs.length > 1) {
+      const timeIdx = idx(logData[0], "time");
+      const times = logs.map(row => row[timeIdx]).sort();
+      const diffMins = minutesDiff(times[0], times[times.length-1]);
+      if (diffMins >= 420) { // 7hr = 420min
+        status = "Present"; 
+        countPresent++;
+      } else if (diffMins > 240 && diffMins < 420) { // 4hr = 240min, 7hr = 420min
+        status = "Half Day"; 
+        countHalfDay++;
+      } else {
+        status = "First Log"; // Gap <= 4 hours
+        countFirstLog++;
+      }
+    } else {
+      countAbsent++;
+    }
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td>${sid}</td>
+       <td>${name}</td>
+       <td><span class="status-badge status-${status.replace(/\s+/g, '')}">${status}</span></td>`;
+    tr.onclick = () => {
+      const modal = document.getElementById('modal');
+      const card = document.getElementById('modal-card');
+      
+      const timeIdx = idx(logData[0], "time");
+      const logIdIdx = idx(logData[0], "log id");
+      const selfieIdx = idx(logData[0], "selfie");
+      
+      // Sort logs by time
+      logs.sort((a,b) => (a[timeIdx] > b[timeIdx]) ? 1 : -1);
+      const firstLog = logs[0];
+      const lastLog = logs[logs.length-1];
+      
+      const firstLogTime = firstLog[timeIdx];
+      const lastLogTime = lastLog[timeIdx];
+      const firstLogId = firstLog[logIdIdx];
+      const lastLogId = lastLog[logIdIdx];
+      const firstSelfie = firstLog[selfieIdx];
+      const lastSelfie = lastLog[selfieIdx];
+
+      card.innerHTML =
+        `<button class="close-modal" onclick="document.getElementById('modal').classList.remove('show')" style="float:right;">&times;</button>
+        <table style="width:100%;border-collapse:separate;border-spacing:0 6px;">
+          <tr>
+            <td style="font-weight:bold;">Status:</td>
+            <td colspan="3"><span class="status-badge status-${status.replace(/\s+/g, '')}">${status}</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">Log ID:</td>
+            <td>${firstLogId}</td>
+            <td>${lastLogId}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">Staff ID:</td>
+            <td>${sid}</td>
+            <td style="font-weight:bold;">Name:</td>
+            <td>${name}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">First Log:</td>
+            <td>${firstLogTime}</td>
+            <td style="font-weight:bold;">Last Log:</td>
+            <td>${lastLogTime}</td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold;">First Log:</td>
+            <td>${firstSelfie ? `<a href="${firstSelfie}" target="_blank">View</a>` : "N/A"}</td>
+            <td style="font-weight:bold;">Last Log:</td>
+            <td>${lastSelfie ? `<a href="${lastSelfie}" target="_blank">View</a>` : "N/A"}</td>
+          </tr>
+        </table>`;
+      modal.classList.add("show");
+    };
+    tbody.appendChild(tr);
+    count++;
+  }
+  
+  if (!count) {
+    document.getElementById("empty").textContent = "No ACTIVE staff had logs for this branch/date.";
+    document.getElementById("empty").style.display = "";
+  }
+  
+  // Update dashboard counts
+  document.getElementById('presentCount').querySelector('.dash-value').textContent = countPresent;
+  document.getElementById('halfdayCount').querySelector('.dash-value').textContent = countHalfDay;
+  document.getElementById('firstlogCount').querySelector('.dash-value').textContent = countFirstLog;
+  document.getElementById('absentCount').querySelector('.dash-value').textContent = countAbsent;
+  
+  // Update pie chart
+  if(window.statusChart) window.statusChart.destroy();
+  const ctx = document.getElementById('statusPie').getContext('2d');
+  window.statusChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Present','Half Day','First Log','Absent'],
+      datasets: [{
+        label: 'Attendance',
+        data: [countPresent,countHalfDay,countFirstLog,countAbsent],
+        backgroundColor: ['#36dc7c','#ffee7a','#59baff','#fcc5c5']
+      }]
+    },
+    options: { cutout:'70%', plugins:{legend:{position:'bottom'}} }
+  });
+}
+
+function populateBranchSelect() {
+  const sel = document.getElementById('branch');
+  sel.innerHTML = '<option value="">Choose branch...</option>';
+  if (!logData || !logData.length) return;
+  const branchIdx = idx(logData[0], "branch");
+  const branches = Array.from(new Set(logData.slice(1).map(r => r[branchIdx]).filter(Boolean)));
+  
+  // Debug logging for branch population
+  console.log("Branch index found:", branchIdx);
+  console.log("Raw branches from logData:", branches);
+  
+  branches.forEach(branch => {
+    const opt = document.createElement('option');
+    opt.value = branch; 
+    opt.textContent = branch;
+    sel.appendChild(opt);
+    // Debug: log each option being added
+    console.log("Adding branch option:", branch, "with value:", opt.value);
+  });
+  
+  console.log("Final dropdown options:", Array.from(sel.options).map(opt => ({value: opt.value, text: opt.textContent})));
+}
+
+async function fetchData() {
+  let error = '';
+  try {
+    const [log, staff] = await Promise.all([
+      fetch(LOG_CSV).then(r=>r.text()),
+      fetch(STAFF_CSV).then(r=>r.text())
+    ]);
+    // Parse CSVs
+    logData = parseCSV(log);
+    const staffRows = parseCSV(staff);
+    
+    // Console diagnostics
+    console.log('Attendance headers:', logData[0]);
+    console.log('Staff DB headers:', staffRows[0]);
+    
+    // Build a staff array with meta fields at staff DB parse
+    const statusIdx = idx(staffRows[0], "status");
+    const sBranchIdx = idx(staffRows[0], "branch");
+    const staffIdIdx = idx(staffRows[0], "staff-id"); // Staff DB uses 'staff-id' with dash
+    const nameIdx = idx(staffRows[0], "name");
+    
+    if (staffIdIdx == -1 || nameIdx == -1) throw "Staff DB headers missing (needs staff-id, Name)";
+    
+    // Debug: Show what we found
+    console.log("Staff DB column indexes:", {statusIdx, sBranchIdx, staffIdIdx, nameIdx});
+    console.log("Sample staff row:", staffRows[1]);
+    
+    staffList = []; // Instead of just staffMap
+    staffRows.slice(1).forEach(row => {
+      staffList.push({
+        id: row[staffIdIdx],
+        name: row[nameIdx],
+        status: (row[statusIdx] || "").trim(),
+        branch: (row[sBranchIdx] || "").trim()
+      });
+    });
+    
+    // Debug: Show parsed staff data
+    console.log("Parsed staffList sample:", staffList.slice(0, 3));
+    console.log("All staff branches:", staffList.map(s => s.branch));
+    console.log("All staff statuses:", staffList.map(s => s.status));
+    
+    // Keep staffMap for backward compatibility
+    staffMap = {};
+    staffRows.slice(1).forEach(r => staffMap[r[staffIdIdx]] = r[nameIdx]);
+    
+    populateBranchSelect();
+    renderTable();
+  } catch (err) {
+    document.querySelector("tbody").innerHTML = "";
+    document.getElementById("empty").textContent =
+      "Failed to load data: " + err + "\nCheck your Google Sheet JIT link and header names!";
+    document.getElementById("empty").style.display = '';
+  }
+}
+
+// Export CSV functionality
+function exportToCSV() {
+  const branchVal = document.getElementById('branch').value;
+  const dateVal = document.getElementById('date').value;
+  
+  if (!branchVal || !dateVal) {
+    alert('Please select both branch and date first.');
+    return;
+  }
+  
+  const logsToday = getLogEntriesForBranchDate(branchVal, dateVal);
+  const actives = getActiveStaffIds();
+  
+  // Build CSV data
+  let csvContent = "Staff ID,Name,Status,First Log,Last Log,Log IDs\n";
+  
+  const byStaff = {};
+  logsToday.forEach(log => {
+    const sid = log[idx(logData[0], "staff id")];
+    if (!actives.has(sid)) return;
+    if (!byStaff[sid]) byStaff[sid] = [];
+    byStaff[sid].push(log);
+  });
+  
+  for (const sid in byStaff) {
+    const logs = byStaff[sid];
+    const empObj = staffList.find(e => e.id === sid);
+    const name = empObj ? empObj.name : '-';
+    
+    let status = "Absent";
+    if (logs.length === 1) {
+      status = "First Log";
+    } else if (logs.length > 1) {
+      const timeIdx = idx(logData[0], "time");
+      const times = logs.map(row => row[timeIdx]).sort();
+      const diffMins = minutesDiff(times[0], times[times.length-1]);
+      if (diffMins >= 420) status = "Present";
+      else if (diffMins > 240 && diffMins < 420) status = "Half Day";
+      else status = "First Log";
+    }
+    
+    const timeIdx = idx(logData[0], "time");
+    const times = logs.map(row => row[timeIdx]).sort();
+    const firstLog = times[0] || "-";
+    const lastLog = times[times.length-1] || "-";
+    const logIds = logs.map(row => row[idx(logData[0], "log id")]).join('; ');
+    
+    csvContent += `${sid},"${name}",${status},"${firstLog}","${lastLog}","${logIds}"\n`;
+  }
+  
+  // Download CSV
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", `attendance_${branchVal}_${dateVal}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Event listeners
+document.getElementById('branch').onchange = renderTable;
+document.getElementById('date').onchange = renderTable;
+document.getElementById('exportBtn').onclick = exportToCSV;
+document.getElementById('modal').onclick = e=>{
+  if(e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+};
+
+// Set date to today on page load
+document.getElementById('date').value = todayISO();
+fetchData();
+</script>
+</body>
+</html>
