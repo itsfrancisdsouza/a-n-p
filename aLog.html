@@ -26,71 +26,114 @@
     }
 
     .dashboard {
-      display: flex; 
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-      background: transparent;
-      padding: 8px 0 4px 0;
-    }
-
-    .filter-bar {
-      background: rgba(255,255,255,0.95);
-      border-radius: 18px;
       display: flex;
-      flex-wrap: wrap;
-      gap: 18px;
-      margin-bottom:18px;
-      box-shadow: 0 1px 10px #eadfba22;
-      padding: 10px 16px;
-      align-items: center;
+      gap: 12px;
+      justify-content: space-between;
+      background: transparent;
+      padding: 5px 2vw 6px 2vw;
+      margin-bottom: 8px;
     }
 
-    .filter-bar label {
+    .filter-card {
+      background: #fffefcde;
+      border-radius: 18px;
+      box-shadow: 0 2px 26px #f8eec29d, 0 1.5px 5px #f5eacf18;
+      padding: 17px 5vw 12px 5vw;
+      margin: 8px 0 12px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .filter-label {
       font-size: 1em;
-      font-weight: 500;
-      margin: 8px 0;
+      font-weight: 600;
+      color: #232c45;
+      margin-bottom: 0.8em;
     }
 
-    select, input[type="date"] {
-      padding: 8px 18px;
-      border-radius: 14px;
+    .filter-select, .filter-date {
+      width: 100%;
+      display: block;
+      margin-top: 4px;
+      margin-bottom: 14px;
+      padding: 9px 15px;
+      border-radius: 12px;
       border: none;
-      background: #f5f7fb;
-      font-size: 1.1em;
-      margin-left: 8px;
-      box-shadow: 0 2px 7px #e2cfd622;
+      background: #f6f6fd;
+      font-size: 1.14em;
+      box-shadow: 0 2px 8px #f2ecc623;
+      color: #34323a;
     }
 
-    select:focus, input[type="date"]:focus { 
-      outline: 2px solid #f0d75d;
+    .filter-date-wrap { 
+      width: 100%;
+      display: flex;
+      align-items: center; 
+    }
+
+    .filter-date-label { 
+      font-weight: 600; 
+      margin-right: 12px; 
+    }
+
+    .filter-date { 
+      flex: 1; 
+    }
+
+    .filter-select:focus, .filter-date:focus { 
+      outline: none;
+      box-shadow: 0 2px 12px #f2ecc645, 0 0 0 2px #f0d75d40;
+      background: #f8f8ff;
+      transition: all 0.2s ease;
+    }
+
+    .filter-select:hover, .filter-date:hover {
+      background: #f0f0f8;
+      box-shadow: 0 2px 10px #f2ecc635;
     }
 
     .dash-card {
-      background: rgba(255,255,255,0.88);
-      border-radius: 13px;
-      min-width: 82px; 
-      padding: 7px 0 4px 0;
-      box-shadow: 0 1.5px 12px #eedeac14;
-      display: flex; 
-      flex-direction: column; 
+      background: rgba(255,255,255,0.96);
+      border-radius: 21px;
+      min-width: 68px;
+      min-height: 74px;
+      box-shadow: 0 2px 13px #f8ecd911, 0 1.5px 5px #efd68a18;
+      display: flex;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
       border: none;
-      margin-bottom:2px;
+      padding: 7px 0 2px 0;
+      position: relative;
+      transition: all .13s ease;
+    }
+
+    .dash-card:hover { 
+      box-shadow: 0 8px 24px #c8ba8733; 
+      transform: translateY(-2px);
     }
 
     .dash-label {
-      color: #c5b88c;
-      font-size: 0.92em;
-      line-height: 1.2;
-      margin-bottom: 1px;
+      color: #cdb480;
+      font-size: 0.97em;
+      margin-bottom: 2px;
+      font-weight: 500;
+      letter-spacing: .01em;
     }
 
     .dash-value {
-      font-size: 1.22em; 
-      font-weight: 700; 
-      color:#222; 
+      font-size: 1.15em;
+      font-weight: 700;
+      color: #222;
+      margin-top: 5px;
+      margin-bottom: 0;
       letter-spacing: 0.03em;
+    }
+
+    .dash-icon {
+      display: block;
+      font-size: 1.45em;
       margin-bottom: 2px;
     }
 
@@ -148,12 +191,19 @@
     }
 
     .status-badge {
-      border-radius: 999px;
+      border-radius: 12px;
       font-size: 1em;
-      font-weight: 600;
-      padding: 5px 18px;
+      font-weight: 700;
+      padding: 5px 15px;
       box-shadow: 0 1px 3px #dbefa921;
       letter-spacing: 0.01em;
+    }
+    
+    @media (max-width: 600px) {
+      .status-badge { 
+        font-size: .97em; 
+        padding: 5px 10px; 
+      }
     }
     .status-Present { background: #e6f9ef; color: #22c55e;}
     .status-HalfDay { background: #faf5e7; color: #f5a524;}
@@ -192,13 +242,16 @@
       background: #f5f6fa; 
       color: #333;
       border-radius: 999px;
-      font-size: 2.1em;
+      font-size: 2em;
       float:right;
       margin-left:10px;
-      min-width: 40px;
-      min-height: 40px;
+      min-width: 36px;
+      min-height: 36px;
       box-shadow: 0 2px 9px #ede8c571;
       cursor: pointer;
+    }
+    @media (max-width: 430px) {
+      .close-modal { font-size: 1.45em; min-width: 30px;}
     }
 
     .empty {
@@ -235,7 +288,7 @@
         margin:15px 0;
       }
       .dashboard { 
-        gap:3px;
+        gap: 4px;
         overflow-x: auto; 
         flex-wrap: nowrap;
         padding: 7px 0 0 0;
@@ -243,100 +296,158 @@
       }
       .dashboard::-webkit-scrollbar { height: 0;}
       .dash-card { 
-        min-width: 80px; 
+        min-width: 60px; 
+        min-height: 63px;
         max-width:115px; 
         font-size: .97em; 
         padding: 7px 0; 
         margin-right:3vw; 
         margin-bottom:0;
       }
-      .filter-bar { 
-        flex-direction:column; 
-        gap:7px;
+      .dash-label, .dash-value { 
+        font-size: 0.97em;
+      }
+      .dash-icon { 
+        font-size: 1.17em;
+      }
+      .filter-card { 
+        padding: 12px 3vw 8px 3vw;
       }
       .modal-card { 
         padding:14px 7vw; 
         min-width: unset;
       }
-      table th, table td { 
-        font-size: .94em; 
-        padding: 9px 5vw;
-      }
     }
 
-    /* Mobile Card-Style Table */
-    @media (max-width:520px) {
-      thead { display:none; }
-      tbody tr { 
-        display:block; 
-        background:#fff; 
-        margin-bottom:10px; 
-        border-radius:16px; 
-        box-shadow:0 1.5px 12px #ebd46f22; 
-        padding: 10px 2vw; 
-        transition: box-shadow .15s;
-      }
-      tbody tr:hover {
-        box-shadow:0 3px 20px #ebd46f44;
-      }
-      tbody td { 
-        display:block; 
-        width:100%; 
-        border:none; 
-        padding:5px 2vw!important;
-        position: relative;
-      }
-      tbody td:nth-child(1)::before {content: "Staff ID: "; color: #bba453; font-weight: 600; margin-right: 8px;}
-      tbody td:nth-child(2)::before {content: "Name: "; color: #bba453; font-weight: 600; margin-right: 8px;}
-      tbody td:nth-child(3)::before {content: "Status: "; color: #bba453; font-weight: 600; margin-right: 8px;}
-    }
+
 
     /* Custom Scrollbar */
     ::-webkit-scrollbar{width:9px;}
     ::-webkit-scrollbar-thumb{background:#f5eca7;border-radius:9px;}
     ::-webkit-scrollbar-track{background:#faf8ed;}
+
+    /* Table Card Wrapper */
+    .table-card {
+      background: #fffde8;
+      border-radius: 18px;
+      box-shadow: 0 3px 22px #e5ddbf13, 0 1px 4px #f8e5aa12;
+      padding: 16px 4vw 16px 4vw;
+      margin: 22px 0 18px 0;
+      overflow-x: auto;
+    }
+
+    /* Responsive font and padding only - NO layout changes */
+    @media (max-width: 600px) {
+      .table-card { padding: 7px 1vw 7px 1vw; }
+      th, td     { font-size: .97em; padding: 10px 4px;}
+    }
+    @media (max-width: 400px) {
+      th, td     { font-size: .92em; }
+      .table-card { padding: 7px 0; }
+    }
+
+    /* Modal Table Styles */
+    .modal-data {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex; 
+      flex-direction: column;
+      gap: 16px;
+    }
+    .modal-data .item {
+      display: flex; 
+      flex-wrap: wrap; 
+      align-items: center;
+      font-size: 1.02em;
+      margin-bottom: 2px;
+      border-bottom: 1px solid #f1f1f7;
+      padding: 8px 0 3px 0;
+    }
+    .modal-data .item-label {
+      font-weight: bold;
+      color: #3d3d3d;
+      margin-right: 7px;
+      min-width: 84px;
+    }
+    .modal-data .item-value {
+      color: #262626;
+      flex: 1 1 0px;
+      margin-right: 10px;
+      word-break: break-word;
+    }
+    @media (max-width: 470px) {
+      .modal-data { font-size: .96em;}
+      .modal-data .item-label { min-width:64px; }
+      .modal-card { padding: 2vw 1vw;}
+    }
+
+    /* Normal desktop modal font */
+    .modal-card, .modal-data { font-size: 1.09em; }
+
+    @media (max-width: 500px) {
+      .modal-card, .modal-data { font-size: 0.97em; }
+      .modal-card { padding: 9vw 2vw 7vw 2vw; }
+    }
+
+    @media (max-width: 370px) {
+      .modal-card, .modal-data { font-size: 0.89em; }
+      .modal-card { padding: 5vw 2vw 5vw 2vw; }
+    }
+
+    .modal-data .item {
+      gap: 1em;
+    }
+
+    /* Make sure labels and "View" links will wrap if too long */
+    .modal-data .item-label,
+    .modal-data .item-value {
+      word-break: break-word;
+    }
   </style>
 </head>
 <body>
   <div class="main-content">
     <div class="dashboard">
       <div class="dash-card" id="presentCount">
-        <span style="font-size:1.2em;color:#22c55e;">✔️</span>
+        <span class="dash-icon" style="color:#6d6dff;">✔️</span>
         <div class="dash-label">Present</div>
         <div class="dash-value">0</div>
       </div>
       <div class="dash-card" id="halfdayCount">
-        <span style="font-size:1.2em;color:#f5a524;">⏰</span>
+        <span class="dash-icon" style="color:#FFD660;">⏰</span>
         <div class="dash-label">Half Day</div>
         <div class="dash-value">0</div>
       </div>
       <div class="dash-card" id="firstlogCount">
-        <span style="font-size:1.2em;color:#3596e7;">📝</span>
+        <span class="dash-icon" style="color:#a788fe;">📝</span>
         <div class="dash-label">First Log</div>
         <div class="dash-value">0</div>
       </div>
       <div class="dash-card" id="absentCount">
-        <span style="font-size:1.2em;color:#f44336;">❌</span>
+        <span class="dash-icon" style="color:#f86a89;">❌</span>
         <div class="dash-label">Absent</div>
         <div class="dash-value">0</div>
       </div>
     </div>
-    <div class="filter-bar">
-      <label>Branch:
-        <select id="branch">
+    <div class="filter-card">
+      <label class="filter-label">
+        <select class="filter-select" id="branch">
           <option value="">Choose branch...</option>
         </select>
       </label>
-      <label>Date:
-        <input type="date" id="date"/>
-      </label>
+      <div class="filter-date-wrap">
+        <input class="filter-date" type="date" id="date"/>
+      </div>
     </div>
-    <table id="log-table" aria-label="Attendance table">
-      <thead>
-        <tr><th>Staff ID</th><th>Name</th><th>Status</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-card">
+      <table id="log-table" aria-label="Attendance table">
+        <thead>
+          <tr><th>Staff ID</th><th>Name</th><th>Status</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <div style="text-align: center; margin: 16px 0;">
       <button id="exportBtn" class="export-btn">📊 Export as CSV</button>
     </div>
@@ -507,35 +618,35 @@ function renderTable() {
 
       card.innerHTML =
         `<button class="close-modal" onclick="document.getElementById('modal').classList.remove('show')" style="float:right;">&times;</button>
-        <table style="width:100%;border-collapse:separate;border-spacing:0 6px;">
-          <tr>
-            <td style="font-weight:bold;">Status:</td>
-            <td colspan="3"><span class="status-badge status-${status.replace(/\s+/g, '')}">${status}</span></td>
-          </tr>
-          <tr>
-            <td style="font-weight:bold;">Log ID:</td>
-            <td>${firstLogId}</td>
-            <td>${lastLogId}</td>
-          </tr>
-          <tr>
-            <td style="font-weight:bold;">Staff ID:</td>
-            <td>${sid}</td>
-            <td style="font-weight:bold;">Name:</td>
-            <td>${name}</td>
-          </tr>
-          <tr>
-            <td style="font-weight:bold;">First Log:</td>
-            <td>${firstLogTime}</td>
-            <td style="font-weight:bold;">Last Log:</td>
-            <td>${lastLogTime}</td>
-          </tr>
-          <tr>
-            <td style="font-weight:bold;">First Log:</td>
-            <td>${firstSelfie ? `<a href="${firstSelfie}" target="_blank">View</a>` : "N/A"}</td>
-            <td style="font-weight:bold;">Last Log:</td>
-            <td>${lastSelfie ? `<a href="${lastSelfie}" target="_blank">View</a>` : "N/A"}</td>
-          </tr>
-        </table>`;
+        <div class="modal-data">
+          <div class="item">
+            <span class="item-label">Status:</span>
+            <span class="item-value"><span class="status-badge status-${status.replace(/\s+/g, '')}">${status}</span></span>
+          </div>
+          <div class="item">
+            <span class="item-label">Log ID:</span>
+            <span class="item-value">${firstLogId}</span>
+            <span class="item-value">${lastLogId}</span>
+          </div>
+          <div class="item">
+            <span class="item-label">Staff ID:</span>
+            <span class="item-value">${sid}</span>
+            <span class="item-label">Name:</span>
+            <span class="item-value">${name}</span>
+          </div>
+          <div class="item">
+            <span class="item-label">First Log:</span>
+            <span class="item-value">${firstLogTime}</span>
+            <span class="item-label">Last Log:</span>
+            <span class="item-value">${lastLogTime}</span>
+          </div>
+          <div class="item">
+            <span class="item-label">First Log:</span>
+            <span class="item-value">${firstSelfie ? `<a href="${firstSelfie}" target="_blank">View</a>` : "N/A"}</span>
+            <span class="item-label">Last Log:</span>
+            <span class="item-value">${lastSelfie ? `<a href="${lastSelfie}" target="_blank">View</a>` : "N/A"}</span>
+          </div>
+        </div>`;
       modal.classList.add("show");
     };
     tbody.appendChild(tr);
